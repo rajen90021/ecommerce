@@ -36,7 +36,7 @@ export const connectDB = async () => {
     console.log('Database connection has been established successfully.');
 
     // Use { force: true } to drop and recreate tables
-   await sequelize.sync({ alter: true }); // Alters tables to match models
+   await sequelize.sync({alter: true }); // Alters tables to match models
 
     console.log('table sync complete!');
    
