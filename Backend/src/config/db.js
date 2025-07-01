@@ -16,6 +16,12 @@
 
 import { Sequelize } from 'sequelize';
 import config from './config.js';
+import fs from 'fs';
+import path from 'path';
+
+// // Load CA certificate
+// const caCertPath = path.resolve('certs/ca.pem');
+// const caCert = fs.readFileSync(caCertPath);
 
 const sequelize = new Sequelize(
   config.db.database,
@@ -26,6 +32,15 @@ const sequelize = new Sequelize(
     port: config.db.port,
     dialect: 'mysql',
     logging: false, // set to true if you want SQL query logs
+  //   dialectOptions: {
+  //   ssl: {
+  //     ca: caCert,
+  //     rejectUnauthorized: false, // TEMP: true in production
+  //     minVersion: 'TLSv1.2',
+  //   }
+  // }
+
+   
   }
 );
 
@@ -36,7 +51,7 @@ export const connectDB = async () => {
     console.log('Database connection has been established successfully.');
 
     // Use { force: true } to drop and recreate tables
-   await sequelize.sync({alter: true }); // Alters tables to match models
+   await sequelize.sync({force: true }); // Alters tables to match models
 
     console.log('table sync complete!');
    
