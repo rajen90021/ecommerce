@@ -70,8 +70,8 @@ const seedComprehensiveData = async () => {
                 parent_cat_id: null,
                 status: 'active',
                 image_url: mainCat.image,
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
 
             createdCategories.push(mainCategory);
@@ -85,8 +85,8 @@ const seedComprehensiveData = async () => {
                     parent_cat_id: mainCategory.id,
                     status: 'active',
                     image_url: mainCat.image,
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 });
                 createdCategories.push(subCategory);
             }
@@ -153,8 +153,8 @@ const seedComprehensiveData = async () => {
                 total_reviews: reviews,
                 status: 'active',
                 image_url: primaryImageUrl,
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
 
             productCount++;
@@ -168,8 +168,8 @@ const seedComprehensiveData = async () => {
                 price_adjustment: 0,
                 stock_quantity: 10,
                 status: 'active',
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
 
             // Create product images (3-5 images per product)
@@ -183,8 +183,8 @@ const seedComprehensiveData = async () => {
                     image_order: j,
                     is_primary: j === 0,
                     status: 'active',
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 });
             }
         }
