@@ -1,16 +1,27 @@
-// import '../config/association.js'; // Ensure models are associated
-// import { connectDB } from '../config/db.js';
-// import { createRole } from '../helpers/createRole.js';
+import { v4 as uuidv4 } from 'uuid';
+import role from "../modules/user/role.model.js";
+import { enumRole } from '../shared/constants/roles.js';
 
-//  export const seedRoles = async () => {
-//   await connectDB();
-//   await createRole();
-//   console.log('Roles seeded successfully.');
-//   process.exit(0);
-// };
+export const createRole = async () => {
 
-// seedRoles().catch(err => {
-//   console.error('Failed to seed roles:', err);
-//   process.exit(1);
-// });
+    const roles = enumRole;
 
+    for (let rolename of roles) {
+
+        const roleExists = await role.findOne({
+            where: { role_name: rolename }
+        });
+
+        if (!roleExists) {
+            await role.create({
+                id: uuidv4(),
+                role_name: rolename
+            });
+            console.log(`Role ${rolename} created successfully.`);
+        } else {
+            console.log(`Role ${rolename} already exists.`);
+        }
+    }
+
+
+};
