@@ -39,12 +39,10 @@ export const connectDB = async () => {
 
         // In production, you MUST use migrations. 
         // In dev, you can use sync if you want, but migrations are preferred.
-        /*
         if (config.env === 'development' || config.env === 'production') {
-            await sequelize.sync({ alter: true }); // Careful!
+            await sequelize.sync({ alter: true }); // Failsafe for Render
             console.log(`ℹ️  DB Synced successfully for ${config.env} mode.`);
         }
-        */
         console.log('ℹ️  Using Sequelize Migrations for schema management.');
     } catch (error) {
         console.error('❌ Unable to connect to the database:', error);
