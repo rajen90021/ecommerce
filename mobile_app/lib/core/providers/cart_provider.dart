@@ -116,14 +116,23 @@ class CartProvider extends ChangeNotifier {
     if (data != null) {
       try {
         final List<dynamic> decoded = json.decode(data);
-        _items = decoded.map((item) => CartItem(
-          product: ProductModel.fromJson(item['product']),
-          selectedSize: item['selectedSize'],
-          quantity: item['quantity'],
-        )).toList();
+        _items = decoded.map((item) {
+          try {
+            return CartItem(
+              product: ProductModel.fromJson(item['product']),
+              selectedSize: item['selectedSize'],
+              quantity: item['quantity'],
+            );
+          } catch (e) {
+            debugPrint('Failed to parse cart item: $e');
+            return null;
+          }
+        }).whereType<CartItem>().toList();
         notifyListeners();
       } catch (e) {
         debugPrint('Error loading cart: $e');
+        // If data is corrupt, clear it
+        prefs.remove(_storageKey);
       }
     }
   }

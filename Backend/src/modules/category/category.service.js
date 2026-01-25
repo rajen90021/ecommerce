@@ -43,8 +43,8 @@ class CategoryService {
             parent_cat_id,
             status: status || 'active',
             image_url: imageUrl,
-            created_At: new Date(),
-            updated_At: new Date()
+            createdAt: new Date(),
+            updatedAt: new Date()
         });
     }
 
@@ -150,7 +150,7 @@ class CategoryService {
         category.parent_cat_id = parent_cat_id !== undefined ? parent_cat_id : category.parent_cat_id;
         category.status = status || category.status;
         category.image_url = newImageUrl;
-        category.updated_At = new Date();
+        category.updatedAt = new Date();
 
         return await category.save();
     }
@@ -189,7 +189,7 @@ class CategoryService {
         }
 
         category.status = 'inactive';
-        category.updated_At = new Date();
+        category.updatedAt = new Date();
         await category.save();
 
         return true;

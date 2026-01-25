@@ -13,7 +13,7 @@ class ProductService {
         const {
             page = 1,
             limit = 20,
-            sortBy = 'created_At',
+            sortBy = 'createdAt',
             sortOrder = 'DESC',
             category_id,
             subcategory_id,
@@ -182,7 +182,7 @@ class ProductService {
             },
             limit: parseInt(limit),
             offset: parseInt(offset),
-            order: [['created_At', 'DESC']],
+            order: [['createdAt', 'DESC']],
             include: [
                 { model: Category, as: 'category', attributes: ['id', 'category_name', 'url_slug'] },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
@@ -216,11 +216,11 @@ class ProductService {
             where: {
                 status: 'active',
                 is_trending: true,
-                created_At: { [Op.gte]: dateFilter }
+                createdAt: { [Op.gte]: dateFilter }
             },
             limit: parseInt(limit),
             offset: parseInt(offset),
-            order: [['average_rating', 'DESC'], ['created_At', 'DESC']],
+            order: [['average_rating', 'DESC'], ['createdAt', 'DESC']],
             include: [
                 { model: Category, as: 'category' },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
@@ -251,11 +251,11 @@ class ProductService {
             where: {
                 status: 'active',
                 is_new_arrival: true,
-                created_At: { [Op.gte]: daysAgo }
+                createdAt: { [Op.gte]: daysAgo }
             },
             limit: parseInt(limit),
             offset: parseInt(offset),
-            order: [['created_At', 'DESC']],
+            order: [['createdAt', 'DESC']],
             include: [
                 { model: Category, as: 'category' },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
@@ -642,8 +642,8 @@ class ProductService {
             is_new_arrival: is_new_arrival === 'true' || is_new_arrival === true,
             discount_percentage: discount_percentage ? parseFloat(discount_percentage) : 0,
             original_price: original_price ? parseFloat(original_price) : null,
-            created_At: new Date(),
-            updated_At: new Date()
+            createdAt: new Date(),
+            updatedAt: new Date()
         });
 
         for (const imageData of uploadedImages) {
@@ -651,8 +651,8 @@ class ProductService {
                 product_id: newProduct.id,
                 ...imageData,
                 status: 'active',
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
         }
 
@@ -675,8 +675,8 @@ class ProductService {
                         price_adjustment: parseFloat(variant.price_adjustment || 0),
                         stock_quantity: parseInt(variant.stock_quantity),
                         status: variant.status || 'active',
-                        created_At: new Date(),
-                        updated_At: new Date()
+                        createdAt: new Date(),
+                        updatedAt: new Date()
                     });
                 }
             }
@@ -753,7 +753,7 @@ class ProductService {
             is_new_arrival: is_new_arrival !== undefined ? (is_new_arrival === 'true' || is_new_arrival === true) : undefined,
             discount_percentage: discount_percentage ? parseFloat(discount_percentage) : undefined,
             original_price: original_price ? parseFloat(original_price) : undefined,
-            updated_At: new Date()
+            updatedAt: new Date()
         });
 
         if (variants) {
@@ -774,8 +774,8 @@ class ProductService {
                         price_adjustment: parseFloat(variant.price_adjustment || 0),
                         stock_quantity: parseInt(variant.stock_quantity),
                         status: variant.status || 'active',
-                        created_At: new Date(),
-                        updated_At: new Date()
+                        createdAt: new Date(),
+                        updatedAt: new Date()
                     });
                 }
             }
@@ -803,7 +803,7 @@ class ProductService {
         }
 
         product.status = 'inactive';
-        product.updated_At = new Date();
+        product.updatedAt = new Date();
         await product.save();
 
         await productRepository.removeVariantsWhere({ product_id: id });

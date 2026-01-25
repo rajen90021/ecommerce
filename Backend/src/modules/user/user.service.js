@@ -52,8 +52,8 @@ class UserService {
                 is_verified: false,
                 otp_code: otp,
                 otp_expires_at: new Date(Date.now() + 10 * 60 * 1000),
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             }, t);
 
             if (address) {
@@ -165,8 +165,8 @@ class UserService {
                     phone: phone,
                     firebase_uid: firebaseUid,
                     is_verified: true, // Auto-verified by Firebase
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 }, t);
 
                 await userRepository.addRoleToUser(newUser, roleData, t);
