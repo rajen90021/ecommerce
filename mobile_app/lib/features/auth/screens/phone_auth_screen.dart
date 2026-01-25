@@ -310,8 +310,12 @@ class _LoginScreenState extends State<LoginScreen> {
        final user = FirebaseAuth.instance.currentUser;
        if (user == null) throw Exception("User not found after login");
        
+       final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginPhone}');
+       debugPrint('Syncing with backend: $url');
+       debugPrint('Body: ${jsonEncode({'phone': user.phoneNumber, 'firebaseUid': user.uid})}');
+
        final response = await http.post(
-          Uri.parse(ApiConstants.loginPhone),
+          url,
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'phone': user.phoneNumber,
@@ -319,7 +323,10 @@ class _LoginScreenState extends State<LoginScreen> {
           }),
        );
 
-       if (response.statusCode == 200) {
+       debugPrint('Response Code: ${response.statusCode}');
+       debugPrint('Response Body: ${response.body}');
+
+       if (response.statusCode == 200 || response.statusCode == 201) {
           final data = jsonDecode(response.body);
           final token = data['token'];
           final userData = data['user'];
@@ -335,14 +342,16 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
        } else {
-          throw Exception("Backend sync failed: ${response.body}");
+          final errorData = jsonDecode(response.body);
+          throw Exception(errorData['message'] ?? "Backend returned ${response.statusCode}");
        }
     } catch (e) {
        if (mounted) {
          setState(() => _isLoading = false);
-         _handleAuthError("Sync Error: Something went wrong while connecting to our servers.");
+         _handleAuthError("Login Failed: ${e.toString().replaceAll('Exception:', '')}");
        }
     }
+
   }
   void _handleAuthError(dynamic e) {
     String message = "Something went wrong. Please try again.";
