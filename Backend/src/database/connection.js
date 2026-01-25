@@ -14,7 +14,12 @@ const sequelize = new Sequelize(
         host: config.db.host,
         port: config.db.port,
         dialect: 'mysql',
-        logging: false, // Set to console.log to see SQL queries
+        logging: false,
+        dialectOptions: config.db.ssl ? {
+            ssl: {
+                rejectUnauthorized: false // Required for some hosted MySQL like Aiven
+            }
+        } : {},
         pool: {
             max: 5,
             min: 0,

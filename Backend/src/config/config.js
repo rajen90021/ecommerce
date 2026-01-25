@@ -9,23 +9,37 @@ const __dirname = path.dirname(__filename);
 // Get current environment (defaults to development)
 const env = process.env.NODE_ENV || 'development';
 
-// Dynamically load the appropriate .env file
+// Load .env file only in development or if it exists
 const envFilePath = path.resolve(__dirname, `../../.env.${env}`);
 dotenv.config({ path: envFilePath });
+// Also load standard .env if it exists (Render/Common)
+dotenv.config();
+
+// Helper to get env var with fallback
+const getEnv = (key, fallback) => process.env[key] || fallback;
 
 // Now build the config object
 const config = {
   env,
-  port: process.env.PORT || 3000,
+  port: getEnv('PORT', 6000),
   db: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
-    username: process.env.DB_USER || 'user',
-    password: process.env.DB_PASSWORD || 'password',
-    database: process.env.DB_NAME || 'database',
+    host: getEnv('DB_HOST', ''),
+    port: parseInt(getEnv('DB_PORT', '17360'), 10),
+    username: getEnv('DB_USER', ''),
+    password: getEnv('DB_PASSWORD', ''),
+    database: getEnv('DB_NAME', 'defaultdb'),
+    ssl: getEnv('DB_SSL', 'true') === 'true',
   },
-  apiUrl: process.env.API_URL,
-  socketUrl: process.env.SOCKET_URL,
+  apiUrl: getEnv('API_URL', 'http://localhost:6000'),
+  jwt: {
+    secret: getEnv('JWT_SECRET', 'your_jwt_production_secret_key'),
+    expiration: getEnv('JWT_EXPIRATION', '1h'),
+  },
+  cloudinary: {
+    name: getEnv('CLOUDINARY_CLOUD_NAME', 'divo9znid'),
+    apiKey: getEnv('CLOUDINARY_API_KEY', '776845718457936'),
+    apiSecret: getEnv('CLOUDINARY_API_SECRET', 'EThXuPa880LODtgw9rHVRUwJ3mA'),
+  }
 };
 
 export default config;
