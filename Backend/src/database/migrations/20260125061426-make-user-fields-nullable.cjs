@@ -15,11 +15,14 @@ module.exports = {
       allowNull: true,
     });
 
-    await queryInterface.addColumn('users', 'firebase_uid', {
-      type: Sequelize.STRING,
-      allowNull: true,
-      unique: true,
-    });
+    const tableInfo = await queryInterface.describeTable('users');
+    if (!tableInfo.firebase_uid) {
+      await queryInterface.addColumn('users', 'firebase_uid', {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true,
+      });
+    }
   },
 
   async down(queryInterface, Sequelize) {
