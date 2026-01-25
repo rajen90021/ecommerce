@@ -32,11 +32,16 @@ class UserService {
             throw error;
         }
 
-        const roleData = await userRepository.findRoleByName(requestedRole);
+        let roleData = await userRepository.findRoleByName(requestedRole);
         if (!roleData) {
-            const error = new Error('Role not found');
-            error.statusCode = 404;
-            throw error;
+            // Self-healing: Create role if missing
+            console.log(`ℹ️ Role ${requestedRole} not found. Creating it...`);
+            roleData = await userRepository.createRole({
+                id: uuidv4(),
+                role_name: requestedRole,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -149,11 +154,16 @@ class UserService {
 
         if (!user) {
             // Register new user
-            const roleData = await userRepository.findRoleByName('customer');
+            let roleData = await userRepository.findRoleByName('customer');
             if (!roleData) {
-                const error = new Error('Default role not found');
-                error.statusCode = 500;
-                throw error;
+                // Self-healing: Create role if missing
+                console.log('ℹ️ Default role "customer" not found. Creating it...');
+                roleData = await userRepository.createRole({
+                    id: uuidv4(),
+                    role_name: 'customer',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
             }
 
             user = await sequelize.transaction(async (t) => {

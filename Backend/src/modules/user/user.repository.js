@@ -54,6 +54,10 @@ class UserRepository {
         return await Role.findOne({ where: { role_name: roleName } });
     }
 
+    async createRole(roleData, transaction = null) {
+        return await Role.create(roleData, { transaction });
+    }
+
     async addRoleToUser(user, role, transaction = null) {
         return await user.addRole(role, { transaction });
     }
