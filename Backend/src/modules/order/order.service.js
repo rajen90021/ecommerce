@@ -154,8 +154,8 @@ class OrderService {
                 payment_status: payment_type === 'cod' ? 'not_paid' : 'paid',
                 payment_type,
                 payment_transaction_id,
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             }, t);
 
             // Create Order Items and Update Stock
@@ -163,8 +163,8 @@ class OrderService {
                 await orderRepository.createItem({
                     order_id: order.id,
                     ...item,
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 }, t);
 
                 if (item.product_variant_id) {
@@ -188,8 +188,8 @@ class OrderService {
                 country: shippingAddressData.country,
                 postal_code: shippingAddressData.postal_code,
                 phone: shippingAddressData.phone,
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             }, t);
 
             return order;
@@ -197,7 +197,7 @@ class OrderService {
     }
 
     async getUserOrders(userId, query) {
-        const { page = 1, limit = 10, status, payment_status, sortBy = 'created_At', sortOrder = 'DESC' } = query;
+        const { page = 1, limit = 10, status, payment_status, sortBy = 'createdAt', sortOrder = 'DESC' } = query;
         const offset = (page - 1) * limit;
 
         const whereClause = { user_id: userId };
@@ -266,7 +266,7 @@ class OrderService {
         }
 
         order.status = status;
-        order.updated_At = new Date();
+        order.updatedAt = new Date();
         return await orderRepository.save(order);
     }
 
@@ -280,7 +280,7 @@ class OrderService {
 
         order.payment_status = payment_status;
         if (transaction_id) order.payment_transaction_id = transaction_id;
-        order.updated_At = new Date();
+        order.updatedAt = new Date();
         return await orderRepository.save(order);
     }
 
@@ -313,14 +313,14 @@ class OrderService {
             }
 
             order.status = 'cancelled';
-            order.updated_At = new Date();
+            order.updatedAt = new Date();
             await orderRepository.save(order, t);
             return true;
         });
     }
 
     async getAllOrders(query) {
-        const { page = 1, limit = 10, status, payment_status, payment_type, sortBy = 'created_At', sortOrder = 'DESC' } = query;
+        const { page = 1, limit = 10, status, payment_status, payment_type, sortBy = 'createdAt', sortOrder = 'DESC' } = query;
         const offset = (page - 1) * limit;
         const whereClause = {};
         if (status) whereClause.status = status;

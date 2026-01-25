@@ -43,7 +43,7 @@ class ProductRepository {
         searchString,
         minPrice,
         maxPrice,
-        sortBy = 'created_At',
+        sortBy = 'createdAt',
         sortOrder = 'DESC'
     } = {}) {
         const offset = (page - 1) * limit;
@@ -99,7 +99,7 @@ class ProductRepository {
 
     async deactivateVariantsByProductId(productId, transaction = null) {
         return await ProductVariant.update(
-            { status: 'inactive', updated_At: new Date() },
+            { status: 'inactive', updatedAt: new Date() },
             { where: { product_id: productId }, transaction }
         );
     }
@@ -132,7 +132,7 @@ class ProductRepository {
         return await Product.findAll({
             where: { status: 'active' },
             limit,
-            order: [['created_At', 'DESC']],
+            order: [['createdAt', 'DESC']],
             include: [{ model: Category, as: 'category' }]
         });
     }

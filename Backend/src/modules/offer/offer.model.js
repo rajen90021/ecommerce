@@ -54,13 +54,15 @@ const Offer = sequelize.define('offer', {
         allowNull: false,
         defaultValue: 'active'
     },
-    created_At: {
+    createdAt: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
+        field: 'created_at'
     },
-    updated_At: {
+    updatedAt: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
+        field: 'updated_at'
     }
 }, {
     timestamps: false,

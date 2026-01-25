@@ -60,13 +60,15 @@ const OrderItem = sequelize.define('orderItem', {
         allowNull: false,
         defaultValue: 0
     },
-    created_At: {
+    createdAt: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
+        field: 'created_at'
     },
-    updated_At: {
+    updatedAt: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
+        field: 'updated_at'
     }
 }, {
     timestamps: false,

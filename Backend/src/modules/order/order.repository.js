@@ -69,7 +69,7 @@ class OrderRepository {
 
         const breakdown = await Order.findAll({
             where: {
-                created_At: { [Op.gte]: dateFilter }
+                createdAt: { [Op.gte]: dateFilter }
             },
             attributes: [
                 'status',
@@ -81,11 +81,11 @@ class OrderRepository {
         });
 
         const totalOrders = await this.count({
-            created_At: { [Op.gte]: dateFilter }
+            createdAt: { [Op.gte]: dateFilter }
         });
 
         const totalRevenue = await this.sum('net_amount', {
-            created_At: { [Op.gte]: dateFilter }
+            createdAt: { [Op.gte]: dateFilter }
         });
 
         return {

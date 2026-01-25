@@ -153,8 +153,8 @@ const seedComprehensiveData = async () => {
                 parent_cat_id: null,
                 status: 'active',
                 image_url: mainCat.image,
-                created_At: new Date(),
-                updated_At: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
 
             createdCategories.push(mainCategory);
@@ -169,8 +169,8 @@ const seedComprehensiveData = async () => {
                     parent_cat_id: mainCategory.id,
                     status: 'active',
                     image_url: mainCat.image,
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 });
                 createdCategories.push(subCategory);
             }
@@ -319,8 +319,8 @@ const seedComprehensiveData = async () => {
                 total_reviews: reviews,
                 status: 'active',
                 image_url: primaryImageUrl,
-                created_At: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date within last 30 days
-                updated_At: new Date()
+                createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date within last 30 days
+                updatedAt: new Date()
             });
 
             productCount++;
@@ -335,8 +335,8 @@ const seedComprehensiveData = async () => {
                     image_order: j,
                     is_primary: j === 0,
                     status: 'active',
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 });
                 imageCount++;
             }
@@ -352,8 +352,8 @@ const seedComprehensiveData = async () => {
                     price_adjustment: 0,
                     stock_quantity: 10 + Math.floor(Math.random() * 20),
                     status: 'active',
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 });
                 variantCount++;
             }
@@ -369,8 +369,8 @@ const seedComprehensiveData = async () => {
                     price_adjustment: c * 5,
                     stock_quantity: 15 + Math.floor(Math.random() * 25),
                     status: 'active',
-                    created_At: new Date(),
-                    updated_At: new Date()
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 });
                 variantCount++;
             }

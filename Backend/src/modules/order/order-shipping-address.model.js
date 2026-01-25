@@ -43,13 +43,15 @@ const OrderShippingAddress = sequelize.define('orderShippingAddress', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    created_At: {
+    createdAt: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
+        field: 'created_at'
     },
-    updated_At: {
+    updatedAt: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
+        field: 'updated_at'
     }
 }, {
     timestamps: false,

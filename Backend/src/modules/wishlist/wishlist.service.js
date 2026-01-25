@@ -40,8 +40,8 @@ class WishlistService {
             user_id: userId,
             product_id,
             product_variant_id: product_variant_id || null,
-            created_At: new Date(),
-            updated_At: new Date()
+            createdAt: new Date(),
+            updatedAt: new Date()
         });
     }
 
@@ -57,7 +57,7 @@ class WishlistService {
     }
 
     async getUserWishlist(userId, query) {
-        const { page = 1, limit = 10, sortBy = 'created_At', sortOrder = 'DESC' } = query;
+        const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'DESC' } = query;
         const offset = (page - 1) * limit;
 
         const result = await wishlistRepository.findAndCountAll(
