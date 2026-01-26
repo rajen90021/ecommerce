@@ -65,6 +65,17 @@ class UserRepository {
     async saveUser(user) {
         return await user.save();
     }
+
+    async findAddressesByUserId(userId) {
+        return await Address.findAll({
+            where: { user_id: userId },
+            order: [['created_at', 'DESC']]
+        });
+    }
+
+    async count(whereClause = {}) {
+        return await User.count({ where: whereClause });
+    }
 }
 
 export default new UserRepository();

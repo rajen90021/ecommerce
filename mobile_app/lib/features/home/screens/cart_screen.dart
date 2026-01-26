@@ -3,7 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/cart_provider.dart';
+import '../../../core/providers/coupon_provider.dart';
+import '../../../core/providers/address_provider.dart';
 import '../../../core/widgets/top_toast.dart';
+import '../models/cart_model.dart';
+import '../models/offer_model.dart';
 import 'address_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -17,9 +21,49 @@ class _CartScreenState extends State<CartScreen> {
   final TextEditingController _couponController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Fetch available data on load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeCartData();
+    });
+  }
+
+  Future<void> _initializeCartData() async {
+    final cart = context.read<CartProvider>();
+    final addressProv = context.read<AddressProvider>();
+    final couponProv = context.read<CouponProvider>();
+
+    couponProv.fetchAvailableCoupons();
+    
+    // Attempt to update shipping fee if we have an address
+    if (addressProv.addresses.isEmpty) {
+      await addressProv.fetchAddresses();
+    }
+    
+    if (addressProv.selectedAddress != null) {
+      await cart.updateShippingFromAddress(addressProv.selectedAddress!.city);
+    }
+  }
+
+  @override
   void dispose() {
     _couponController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleApplyCoupon(CartProvider cart, String code) async {
+    try {
+      final success = await cart.applyCoupon(code);
+      if (success && mounted) {
+        Navigator.pop(context); // Close modal if open
+        TopToast.show(context, 'Coupon applied successfully!');
+      }
+    } catch (e) {
+      if (mounted) {
+        TopToast.show(context, e.toString(), isError: true);
+      }
+    }
   }
 
   @override
@@ -156,7 +200,11 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.grey),
-                    onPressed: () => cart.removeFromCart(item.product.id, item.selectedSize),
+                    onPressed: () => cart.removeFromCart(
+                      item.product.id, 
+                      size: item.selectedSize, 
+                      color: item.selectedColor
+                    ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -171,17 +219,31 @@ class _CartScreenState extends State<CartScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(6),
+                  if (item.selectedSize != null)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Size: ${item.selectedSize}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
                     ),
-                    child: Text(
-                      'Size: ${item.selectedSize}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                  if (item.selectedColor != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Color: ${item.selectedColor}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -202,7 +264,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildQuantityController(CartProvider cart, dynamic item) {
+  Widget _buildQuantityController(CartProvider cart, CartItem item) {
     return Container(
       height: 36,
       decoration: BoxDecoration(
@@ -214,7 +276,12 @@ class _CartScreenState extends State<CartScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.remove_rounded, size: 16),
-            onPressed: () => cart.updateQuantity(item.product.id, item.selectedSize, item.quantity - 1),
+            onPressed: () => cart.updateQuantity(
+              item.product.id, 
+              item.quantity - 1,
+              size: item.selectedSize, 
+              color: item.selectedColor
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32),
           ),
@@ -224,7 +291,12 @@ class _CartScreenState extends State<CartScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.add_rounded, size: 16),
-            onPressed: () => cart.updateQuantity(item.product.id, item.selectedSize, item.quantity + 1),
+            onPressed: () => cart.updateQuantity(
+              item.product.id, 
+              item.quantity + 1,
+              size: item.selectedSize, 
+              color: item.selectedColor
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32),
           ),
@@ -248,15 +320,29 @@ class _CartScreenState extends State<CartScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: cart.appliedCoupon != null
-                  ? Text(
-                      'Coupon Applied: ${cart.appliedCoupon}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Coupon Applied: ${cart.appliedCoupon}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 14),
+                        ),
+                        Text(
+                          'You saved ₹${cart.couponDiscount.toInt()}',
+                          style: TextStyle(color: Colors.green[700], fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     )
                   : const Text(
                       'Apply Coupons',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
             ),
+            if (cart.appliedCoupon != null)
+              TextButton(
+                onPressed: () => cart.removeCoupon(),
+                child: const Text('REMOVE', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
             TextButton(
               onPressed: () => _showCouponModal(cart),
               child: Text(
@@ -277,7 +363,7 @@ class _CartScreenState extends State<CartScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
+      builder: (context) => Container(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
           top: 24,
@@ -293,35 +379,66 @@ class _CartScreenState extends State<CartScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            TextField(
-              controller: _couponController,
-              decoration: InputDecoration(
-                hintText: 'Enter Coupon Code',
-                suffixIcon: TextButton(
-                  onPressed: () {
-                    final success = cart.applyCoupon(_couponController.text);
-                    Navigator.pop(context);
-                    if (success) {
-                      TopToast.show(context, 'Coupon applied successfully!');
-                    } else {
-                      TopToast.show(context, 'Invalid coupon code', isError: true);
-                    }
-                  },
-                  child: const Text('APPLY', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              textCapitalization: TextCapitalization.characters,
+            
+            // Text Input for Coupon
+            StatefulBuilder(
+              builder: (context, setStateModal) {
+                return TextField(
+                  controller: _couponController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter Coupon Code',
+                    suffixIcon: cart.isValidatingCoupon 
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : TextButton(
+                        onPressed: () => _handleApplyCoupon(cart, _couponController.text),
+                        child: const Text('APPLY', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (v) => setStateModal(() {}),
+                );
+              }
             ),
-            const SizedBox(height: 16),
+            
+            const SizedBox(height: 24),
             const Text(
               'Available Coupons:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.accent),
             ),
-            const SizedBox(height: 8),
-            _availableCouponItem('SHIV20', 'Get 20% OFF on all items'),
-            _availableCouponItem('WELCOME100', 'Flat ₹100 OFF on orders above ₹500'),
+            const SizedBox(height: 12),
+            
+            // Available Coupons List from Provider
+            Consumer<CouponProvider>(
+              builder: (context, couponProv, child) {
+                if (couponProv.isLoading) {
+                  return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
+                }
+                
+                if (couponProv.availableCoupons.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Text('No active coupons available right now.', style: TextStyle(color: Colors.grey)),
+                  );
+                }
+
+                return ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.3),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: couponProv.availableCoupons.length,
+                    itemBuilder: (context, index) {
+                      final offer = couponProv.availableCoupons[index];
+                      return _availableCouponItem(offer, cart);
+                    },
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -329,31 +446,56 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _availableCouponItem(String code, String desc) {
+  Widget _availableCouponItem(OfferModel offer, CartProvider cart) {
+    bool isEligible = cart.subTotal >= offer.minOrderAmount;
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
+        color: isEligible ? Colors.white : Colors.grey[50],
+        border: Border.all(color: isEligible ? AppColors.primary.withOpacity(0.3) : Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(code, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-              Text(desc, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  offer.code, 
+                  style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 1),
+                ),
+              ),
+              if (isEligible)
+                TextButton(
+                  onPressed: () => _handleApplyCoupon(cart, offer.code),
+                  child: const Text('APPLY', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary)),
+                )
+              else
+                const Text('NOT ELIGIBLE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.copy_rounded, size: 18),
-            onPressed: () {
-              _couponController.text = code;
-              TopToast.show(context, 'Code copied');
-            },
+          const SizedBox(height: 8),
+          Text(
+            offer.description ?? 'Get extra discounts on your order',
+            style: TextStyle(fontSize: 13, color: Colors.grey[700], fontWeight: FontWeight.w500),
           ),
+          if (!isEligible)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Add ₹${(offer.minOrderAmount - cart.subTotal).toInt()} more to unlock this offer',
+                style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
         ],
       ),
     );

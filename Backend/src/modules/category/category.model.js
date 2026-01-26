@@ -16,6 +16,10 @@ const Category = sequelize.define('category', {
         allowNull: false,
         unique: true
     },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
     parent_cat_id: {
         type: DataTypes.UUID,
         allowNull: true,

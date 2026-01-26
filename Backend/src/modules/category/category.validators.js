@@ -7,8 +7,8 @@ export const validateCreateCategory = [
         .isLength({ min: 2, max: 100 }).withMessage('Category name must be between 2 and 100 characters'),
 
     check('url_slug')
+        .optional()
         .trim()
-        .notEmpty().withMessage('URL slug is required')
         .matches(/^[a-z0-9-]+$/).withMessage('URL slug must contain only lowercase letters, numbers, and hyphens')
         .isLength({ min: 2, max: 50 }).withMessage('URL slug must be between 2 and 50 characters'),
 

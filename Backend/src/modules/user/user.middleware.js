@@ -33,8 +33,7 @@ export const adminMiddleware = async (req, res, next) => {
 
         // Check if user has admin role using enum
         const userRoles = user.roles.map(role => role.role_name);
-        const adminRoles = ['admin', 'superadmin'];
-        const isAdmin = userRoles.some(role => adminRoles.includes(role));
+        const isAdmin = userRoles.includes('admin');
 
         if (!isAdmin) {
             const error = new Error('Admin access required');
@@ -119,14 +118,12 @@ export const requireRole = (requiredRoles) => {
 };
 
 // Specific role middlewares using enum values
-export const superAdminMiddleware = requireRole(['superadmin']);
-export const adminOrSuperAdminMiddleware = requireRole(['admin', 'superadmin']);
-export const vendorMiddleware = requireRole(['vendor', 'admin', 'superadmin']);
-export const distributorMiddleware = requireRole(['distributor', 'admin', 'superadmin']);
+export const adminOrSuperAdminMiddleware = requireRole(['admin']);
+export const customerMiddleware = requireRole(['customer', 'admin']);
 
 // Helper function to get admin roles from enum
 export const getAdminRoles = () => {
-    return enumRole.filter(role => ['admin', 'superadmin'].includes(role));
+    return ['admin'];
 };
 
 // Helper function to validate role

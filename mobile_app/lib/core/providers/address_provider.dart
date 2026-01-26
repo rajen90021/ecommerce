@@ -1,19 +1,42 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/home/models/address_model.dart';
+import '../services/address_service.dart';
 
 class AddressProvider extends ChangeNotifier {
   List<AddressModel> _addresses = [];
-  final String _storageKey = 'user_addresses';
   AddressModel? _selectedAddress;
-
-  AddressProvider() {
-    _loadFromPrefs();
-  }
+  bool _isLoading = false;
+  final AddressService _addressService = AddressService();
 
   List<AddressModel> get addresses => _addresses;
   AddressModel? get selectedAddress => _selectedAddress;
+  bool get isLoading => _isLoading;
+
+  AddressProvider() {
+    // We don't fetch automatically on init here because we need user token
+    // It should be fetched when dashboard or checkout loads
+  }
+
+  Future<void> fetchAddresses() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _addresses = await _addressService.getAddresses();
+      if (_addresses.isNotEmpty) {
+        _selectedAddress = _addresses.firstWhere(
+          (a) => a.isDefault, 
+          orElse: () => _addresses.first,
+        );
+      } else {
+        _selectedAddress = null;
+      }
+    } catch (e) {
+      debugPrint('Error fetching addresses: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   void selectAddress(AddressModel address) {
     _selectedAddress = address;
@@ -21,64 +44,60 @@ class AddressProvider extends ChangeNotifier {
   }
 
   Future<void> addAddress(AddressModel address) async {
-    // If it's the first address, make it default
-    bool makeDefault = _addresses.isEmpty || address.isDefault;
-    
-    final newAddress = AddressModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: address.name,
-      mobile: address.mobile,
-      flatHouse: address.flatHouse,
-      areaLocality: address.areaLocality,
-      city: address.city,
-      state: address.state,
-      pincode: address.pincode,
-      isDefault: makeDefault,
-    );
-
-    if (makeDefault) {
-      // Unset other defaults
-      _addresses = _addresses.map((a) => AddressModel(
-        id: a.id, name: a.name, mobile: a.mobile, flatHouse: a.flatHouse,
-        areaLocality: a.areaLocality, city: a.city, state: a.state,
-        pincode: a.pincode, isDefault: false,
-      )).toList();
-      _selectedAddress = newAddress;
-    }
-
-    _addresses.add(newAddress);
+    _isLoading = true;
     notifyListeners();
-    await _saveToPrefs();
+    try {
+      final newAddress = await _addressService.addAddress(address);
+      await fetchAddresses(); // Refresh list to get proper defaults and sorting
+    } catch (e) {
+      debugPrint('Error adding address: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateAddress(String id, AddressModel address) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _addressService.updateAddress(id, address);
+      await fetchAddresses();
+    } catch (e) {
+      debugPrint('Error updating address: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> removeAddress(String id) async {
-    _addresses.removeWhere((a) => a.id == id);
-    if (_selectedAddress?.id == id) {
-      _selectedAddress = _addresses.isNotEmpty ? _addresses.first : null;
-    }
+    _isLoading = true;
     notifyListeners();
-    await _saveToPrefs();
+    try {
+      await _addressService.deleteAddress(id);
+      await fetchAddresses();
+    } catch (e) {
+      debugPrint('Error removing address: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  Future<void> _saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = _addresses.map((a) => a.toJson()).toList();
-    await prefs.setString(_storageKey, json.encode(data));
-  }
-
-  Future<void> _loadFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? data = prefs.getString(_storageKey);
-    if (data != null) {
-      final List<dynamic> decoded = json.decode(data);
-      _addresses = decoded.map((a) => AddressModel.fromJson(a)).toList();
-      
-      // Default selection to the default address or the first one
-      _selectedAddress = _addresses.firstWhere(
-        (a) => a.isDefault, 
-        orElse: () => _addresses.first,
-      );
-      
+  Future<void> setDefaultAddress(String id) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _addressService.setDefaultAddress(id);
+      await fetchAddresses();
+    } catch (e) {
+      debugPrint('Error setting default address: $e');
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }

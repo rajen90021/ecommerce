@@ -47,14 +47,19 @@ router.get('/:id/similar', productController.getSimilarProducts);
 // Get product by ID (should be last to avoid conflicts)
 router.get('/:id', productController.getProductById);
 
+import { authMiddleware } from '../../middleware/authMiddleware.js';
+import { adminMiddleware } from '../user/user.middleware.js';
+
 // ==================== ADMIN ROUTES ====================
-// Note: Add authentication middleware in production
+
+// Apply protection to all admin routes below
+router.use(authMiddleware, adminMiddleware);
 
 // Create product
 router.post('/', uploadMultiple, validateCreateProduct, productController.createProduct);
 
 // Update product
-router.put('/:id', uploadSingle, validateUpdateProduct, productController.updateProduct);
+router.put('/:id', uploadMultiple, validateUpdateProduct, productController.updateProduct);
 
 // Delete product
 router.delete('/:id', productController.deleteProduct);

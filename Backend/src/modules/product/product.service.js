@@ -3,6 +3,7 @@ import Category from '../category/category.model.js';
 import ProductVariant from './product-variant.model.js';
 import ProductImage from './product-image.model.js';
 import { uploadToCloudinary, deleteFromCloudinary, extractPublicIdFromUrl } from '../../integrations/storage/cloudinary.utils.js';
+import { v4 as uuidv4 } from 'uuid';
 import sequelize, { Op } from '../../database/connection.js';
 
 class ProductService {
@@ -33,7 +34,15 @@ class ProductService {
         } = queryParams;
 
         const offset = (page - 1) * limit;
-        let whereClause = { status };
+        let whereClause = {};
+
+        // If status is provided and not 'all', filter by it. 
+        // Default to 'active' only if no specific status is requested.
+        if (status && status !== 'all') {
+            whereClause.status = status;
+        } else if (!status) {
+            whereClause.status = 'active';
+        }
 
         // Category filtering
         if (subcategory_id) {
@@ -41,7 +50,7 @@ class ProductService {
         } else if (category_id) {
             // Get all subcategories under this parent
             const subcategories = await Category.findAll({
-                where: { parent_cat_id: category_id },
+                where: { parent_cat_id: category_id, status: 'active' },
                 attributes: ['id']
             });
             const categoryIds = [category_id, ...subcategories.map(sc => sc.id)];
@@ -95,7 +104,9 @@ class ProductService {
             {
                 model: Category,
                 as: 'category',
-                attributes: ['id', 'category_name', 'url_slug', 'parent_cat_id']
+                // If fetching for public (active products), category must also be active
+                where: (!status || status === 'active') ? { status: 'active' } : {},
+                required: (!status || status === 'active')
             },
             {
                 model: ProductImage,
@@ -143,8 +154,20 @@ class ProductService {
             distinct: true
         });
 
+        const products = result.rows.map(product => {
+            const productJson = product.toJSON();
+            if (productJson.variants) {
+                productJson.variants = productJson.variants.map(v => ({
+                    ...v,
+                    size: v.variant_name === 'Size' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[0] : v.variant_value) : null,
+                    color: v.variant_name === 'Color' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[1] : v.variant_value) : null
+                }));
+            }
+            return productJson;
+        });
+
         return {
-            products: result.rows,
+            products,
             pagination: {
                 total: result.count,
                 currentPage: parseInt(page),
@@ -184,7 +207,13 @@ class ProductService {
             offset: parseInt(offset),
             order: [['createdAt', 'DESC']],
             include: [
-                { model: Category, as: 'category', attributes: ['id', 'category_name', 'url_slug'] },
+                {
+                    model: Category,
+                    as: 'category',
+                    attributes: ['id', 'category_name', 'url_slug'],
+                    where: { status: 'active' },
+                    required: true
+                },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
             ]
         });
@@ -222,7 +251,7 @@ class ProductService {
             offset: parseInt(offset),
             order: [['average_rating', 'DESC'], ['createdAt', 'DESC']],
             include: [
-                { model: Category, as: 'category' },
+                { model: Category, as: 'category', where: { status: 'active' }, required: true },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
             ]
         });
@@ -257,7 +286,7 @@ class ProductService {
             offset: parseInt(offset),
             order: [['createdAt', 'DESC']],
             include: [
-                { model: Category, as: 'category' },
+                { model: Category, as: 'category', where: { status: 'active' }, required: true },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
             ]
         });
@@ -290,7 +319,7 @@ class ProductService {
             offset: parseInt(offset),
             order: [['average_rating', 'DESC'], ['total_reviews', 'DESC']],
             include: [
-                { model: Category, as: 'category' },
+                { model: Category, as: 'category', where: { status: 'active' }, required: true },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
             ]
         });
@@ -335,7 +364,7 @@ class ProductService {
             limit: parseInt(limit),
             order: [[sequelize.literal('RAND()')]],
             include: [
-                { model: Category, as: 'category' },
+                { model: Category, as: 'category', where: { status: 'active' }, required: true },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
             ]
         });
@@ -377,7 +406,7 @@ class ProductService {
             limit: parseInt(limit),
             order: [[sequelize.literal('RAND()')]],
             include: [
-                { model: Category, as: 'category' },
+                { model: Category, as: 'category', where: { status: 'active' }, required: true },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
             ]
         });
@@ -436,6 +465,9 @@ class ProductService {
             const results = await productRepository.findAll({
                 where: whereClause,
                 attributes: ['id', 'product_name', 'url_slug', 'image_url', 'price'],
+                include: [
+                    { model: Category, as: 'category', where: { status: 'active' }, required: true }
+                ],
                 limit: 10,
                 order: [['product_name', 'ASC']]
             });
@@ -460,7 +492,13 @@ class ProductService {
             offset: parseInt(offset),
             order: orderClause,
             include: [
-                { model: Category, as: 'category', attributes: ['id', 'category_name', 'url_slug'] },
+                {
+                    model: Category,
+                    as: 'category',
+                    attributes: ['id', 'category_name', 'url_slug'],
+                    where: { status: 'active' },
+                    required: true
+                },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false },
                 { model: ProductVariant, as: 'variants', required: false }
             ],
@@ -485,12 +523,23 @@ class ProductService {
      */
     async getProductById(id) {
         const product = await productRepository.getDetailedProduct({ id, status: 'active' });
-        if (!product) {
-            const error = new Error('Product not found');
+
+        // Final check: product is found but its category might be inactive
+        if (!product || (product.category && product.category.status === 'inactive')) {
+            const error = new Error('Product not found or unavailable');
             error.statusCode = 404;
             throw error;
         }
-        return product;
+
+        const productJson = product.toJSON();
+        if (productJson.variants) {
+            productJson.variants = productJson.variants.map(v => ({
+                ...v,
+                size: v.variant_name === 'Size' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[0] : v.variant_value) : null,
+                color: v.variant_name === 'Color' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[1] : v.variant_value) : null
+            }));
+        }
+        return productJson;
     }
 
     /**
@@ -498,12 +547,23 @@ class ProductService {
      */
     async getProductBySlug(slug) {
         const product = await productRepository.getDetailedProduct({ url_slug: slug, status: 'active' });
-        if (!product) {
-            const error = new Error('Product not found');
+
+        // Final check: product is found but its category might be inactive
+        if (!product || (product.category && product.category.status === 'inactive')) {
+            const error = new Error('Product not found or unavailable');
             error.statusCode = 404;
             throw error;
         }
-        return product;
+
+        const productJson = product.toJSON();
+        if (productJson.variants) {
+            productJson.variants = productJson.variants.map(v => ({
+                ...v,
+                size: v.variant_name === 'Size' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[0] : v.variant_value) : null,
+                color: v.variant_name === 'Color' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[1] : v.variant_value) : null
+            }));
+        }
+        return productJson;
     }
 
     /**
@@ -569,11 +629,18 @@ class ProductService {
     async createProduct(data, files) {
         // Keep original implementation
         const {
-            product_name, url_slug, category_id, description,
+            product_name, category_id, description,
             price, stock_quantity, status = 'active', variants,
             brand, tags, is_featured, is_trending, is_new_arrival,
             discount_percentage, original_price
         } = data;
+
+        let { url_slug } = data;
+
+        // Auto-generate slug if not provided
+        if (!url_slug || url_slug.trim() === '') {
+            url_slug = product_name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '') + '-' + uuidv4().substring(0, 6);
+        }
 
         const existingProduct = await productRepository.findOne({ where: { url_slug } });
         if (existingProduct) {
@@ -632,8 +699,8 @@ class ProductService {
             category_id,
             description,
             price: parseFloat(price),
-            stock_quantity: parseInt(stock_quantity),
-            status,
+            stock_quantity: stock_quantity ? parseInt(stock_quantity) : 0,
+            status: status || 'active',
             image_url: primaryImageUrl,
             brand,
             tags,
@@ -668,13 +735,28 @@ class ProductService {
 
             if (Array.isArray(parsedVariants)) {
                 for (const variant of parsedVariants) {
+                    // Handle combinations of size and color
+                    let name = 'Variant';
+                    let value = '';
+
+                    if (variant.size && variant.color) {
+                        name = 'Size-Color';
+                        value = `${variant.size}-${variant.color}`;
+                    } else if (variant.size) {
+                        name = 'Size';
+                        value = variant.size;
+                    } else if (variant.color) {
+                        name = 'Color';
+                        value = variant.color;
+                    }
+
                     await productRepository.addVariant({
                         product_id: newProduct.id,
-                        variant_name: variant.variant_name,
-                        variant_value: variant.variant_value,
+                        variant_name: name,
+                        variant_value: value,
                         price_adjustment: parseFloat(variant.price_adjustment || 0),
-                        stock_quantity: parseInt(variant.stock_quantity),
-                        status: variant.status || 'active',
+                        stock_quantity: parseInt(variant.stock_quantity || 0),
+                        status: variant.is_active === false ? 'inactive' : 'active',
                         createdAt: new Date(),
                         updatedAt: new Date()
                     });
@@ -685,7 +767,7 @@ class ProductService {
         return newProduct;
     }
 
-    async updateProduct(id, data, file) {
+    async updateProduct(id, data, files) {
         // Keep original implementation with new fields
         const product = await productRepository.findByPk(id);
         if (!product) {
@@ -698,9 +780,74 @@ class ProductService {
             product_name, url_slug, category_id, description,
             price, stock_quantity, status, variants,
             brand, tags, is_featured, is_trending, is_new_arrival,
-            discount_percentage, original_price
+            discount_percentage, original_price, existing_images
         } = data;
 
+        // --- Handle Images ---
+        let finalImageUrl = product.image_url;
+        let parsedExistingImages = [];
+        if (existing_images) {
+            try {
+                parsedExistingImages = typeof existing_images === 'string' ? JSON.parse(existing_images) : existing_images;
+            } catch (e) {
+                console.error('Error parsing existing images', e);
+            }
+        }
+
+        // Get current images from DB to identify which to delete
+        const currentImages = await ProductImage.findAll({ where: { product_id: id } });
+
+        // Identify images to remove from Cloudinary and DB
+        const keptImageIds = parsedExistingImages.map(img => img.id);
+        const imagesToDelete = currentImages.filter(img => !keptImageIds.includes(img.id));
+
+        for (const img of imagesToDelete) {
+            try {
+                if (img.image_url && img.image_url.includes('cloudinary.com')) {
+                    const publicId = extractPublicIdFromUrl(img.image_url);
+                    if (publicId) await deleteFromCloudinary(publicId);
+                }
+                await img.destroy();
+            } catch (err) {
+                console.error(`Failed to delete image ${img.id}:`, err);
+            }
+        }
+
+        // Upload new images
+        const newUploadedImages = [];
+        if (files && files.length > 0) {
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const uploadResult = await uploadToCloudinary(file.buffer, 'products');
+                    const newImg = await productRepository.addImage({
+                        product_id: id,
+                        image_url: uploadResult.url,
+                        image_order: parsedExistingImages.length + i,
+                        is_primary: parsedExistingImages.length === 0 && i === 0,
+                        status: 'active',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    });
+                    newUploadedImages.push(newImg);
+                }
+            } catch (err) {
+                const error = new Error(`Failed to upload images: ${err.message}`);
+                error.statusCode = 500;
+                throw error;
+            }
+        }
+
+        // Determine the primary image URL for the product record
+        if (newUploadedImages.length > 0 && parsedExistingImages.length === 0) {
+            finalImageUrl = newUploadedImages[0].image_url;
+        } else if (parsedExistingImages.length > 0) {
+            finalImageUrl = parsedExistingImages[0].image_url;
+        } else if (newUploadedImages.length === 0 && parsedExistingImages.length === 0) {
+            finalImageUrl = null;
+        }
+
+        // --- Update Product Record ---
         if (url_slug && url_slug !== product.url_slug) {
             const existing = await productRepository.findOne({
                 where: { url_slug, id: { [Op.ne]: id } }
@@ -721,31 +868,15 @@ class ProductService {
             }
         }
 
-        let newImageUrl = product.image_url;
-        if (file) {
-            try {
-                if (product.image_url && product.image_url.includes('cloudinary.com')) {
-                    const oldPublicId = extractPublicIdFromUrl(product.image_url);
-                    if (oldPublicId) await deleteFromCloudinary(oldPublicId);
-                }
-                const uploadResult = await uploadToCloudinary(file.buffer, 'products');
-                newImageUrl = uploadResult.url;
-            } catch (err) {
-                const error = new Error(`Failed to upload image: ${err.message}`);
-                error.statusCode = 500;
-                throw error;
-            }
-        }
-
         await productRepository.update(product, {
             product_name,
-            url_slug,
+            url_slug: url_slug || product.url_slug, // Preserve existing slug if not provided
             category_id,
             description,
             price: price ? parseFloat(price) : undefined,
             stock_quantity: stock_quantity ? parseInt(stock_quantity) : undefined,
             status,
-            image_url: newImageUrl,
+            image_url: finalImageUrl,
             brand,
             tags,
             is_featured: is_featured !== undefined ? (is_featured === 'true' || is_featured === true) : undefined,
@@ -767,13 +898,28 @@ class ProductService {
             if (Array.isArray(parsedVariants)) {
                 await productRepository.removeVariants(id);
                 for (const variant of parsedVariants) {
+                    // Handle combinations of size and color
+                    let name = 'Variant';
+                    let value = '';
+
+                    if (variant.size && variant.color) {
+                        name = 'Size-Color';
+                        value = `${variant.size}-${variant.color}`;
+                    } else if (variant.size) {
+                        name = 'Size';
+                        value = variant.size;
+                    } else if (variant.color) {
+                        name = 'Color';
+                        value = variant.color;
+                    }
+
                     await productRepository.addVariant({
                         product_id: id,
-                        variant_name: variant.variant_name,
-                        variant_value: variant.variant_value,
+                        variant_name: name,
+                        variant_value: value,
                         price_adjustment: parseFloat(variant.price_adjustment || 0),
-                        stock_quantity: parseInt(variant.stock_quantity),
-                        status: variant.status || 'active',
+                        stock_quantity: parseInt(variant.stock_quantity || 0),
+                        status: variant.is_active === false ? 'inactive' : 'active',
                         createdAt: new Date(),
                         updatedAt: new Date()
                     });
@@ -802,10 +948,7 @@ class ProductService {
             }
         }
 
-        product.status = 'inactive';
-        product.updatedAt = new Date();
-        await product.save();
-
+        await productRepository.delete(id);
         await productRepository.removeVariantsWhere({ product_id: id });
         return true;
     }

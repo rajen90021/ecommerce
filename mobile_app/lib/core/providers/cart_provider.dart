@@ -3,23 +3,98 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/home/models/cart_model.dart';
 import '../../features/home/models/product_model.dart';
+import '../services/coupon_service.dart';
+import '../services/api_service.dart';
+import '../services/location_service.dart';
 
 class CartProvider extends ChangeNotifier {
   List<CartItem> _items = [];
   final String _storageKey = 'user_cart';
+  final CouponService _couponService = CouponService();
+  final LocationService _locationService = LocationService();
   
   String? _appliedCoupon;
   double _couponDiscount = 0.0;
-  final double _shippingFee = 99.0;
+  double _dynamicShippingFee = 0.0;
+  double? _minOrderForFreeShipping;
+  bool _isValidatingCoupon = false;
 
   CartProvider() {
     _loadFromPrefs();
   }
 
+  // Find matching location and update shipping
+  Future<void> updateShippingFromAddress(String? city) async {
+    if (city == null || city.isEmpty) {
+       _dynamicShippingFee = 0.0;
+       _minOrderForFreeShipping = null;
+       notifyListeners();
+       return;
+    }
+
+    try {
+      final activeLocations = await _locationService.getActiveLocations();
+      final String searchCity = city.trim().toLowerCase();
+      
+      debugPrint("🔍 Searching shipping fee for: $searchCity");
+      debugPrint("📊 Active locations in cache: ${activeLocations.length}");
+      
+      // Use greedy matching to find the best region match
+      LocationModel? match;
+      for (var loc in activeLocations) {
+        final cityName = loc.cityName.trim().toLowerCase();
+        if (searchCity.contains(cityName) || cityName.contains(searchCity)) {
+          match = loc;
+          break;
+        }
+      }
+
+      // Final fallback search if no direct city match
+      if (match == null) {
+        debugPrint("⚠️ No direct city match for $searchCity, trying regional fallback...");
+        match = activeLocations.cast<LocationModel?>().firstWhere(
+          (loc) => loc!.cityName.toLowerCase().contains('siliguri') || 
+                   loc.cityName.toLowerCase().contains('kalimpong'),
+          orElse: () => null,
+        );
+      }
+
+      if (match != null) {
+        debugPrint("✅ Found match: ${match.cityName}, Charge: ${match.deliveryCharge}");
+        _dynamicShippingFee = match.deliveryCharge;
+        _minOrderForFreeShipping = match.minOrderAmount;
+      } else {
+        debugPrint("❌ No service area match found for $searchCity");
+        _dynamicShippingFee = 0.0;
+        _minOrderForFreeShipping = null;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error updating shipping for city $city: $e");
+    }
+  }
+
   List<CartItem> get items => _items;
   String? get appliedCoupon => _appliedCoupon;
   double get couponDiscount => _couponDiscount;
-  double get shippingFee => subTotal > 999 ? 0.0 : (items.isEmpty ? 0.0 : _shippingFee);
+  bool get isValidatingCoupon => _isValidatingCoupon;
+  
+  double get shippingFee {
+    if (items.isEmpty) return 0.0;
+    
+    // If we have a min order amount from the location and we've met it
+    if (_minOrderForFreeShipping != null && _minOrderForFreeShipping! > 0) {
+      if (subTotal >= _minOrderForFreeShipping!) return 0.0;
+    }
+    
+    return _dynamicShippingFee;
+  }
+
+  void setShippingDetails(double fee, double? minOrder) {
+    _dynamicShippingFee = fee;
+    _minOrderForFreeShipping = minOrder;
+    notifyListeners();
+  }
 
   int get totalItems => _items.fold(0, (sum, item) => sum + item.quantity);
 
@@ -27,31 +102,43 @@ class CartProvider extends ChangeNotifier {
   
   double get totalAmount => (subTotal + shippingFee) - _couponDiscount;
 
-  void addToCart(ProductModel product, String size) {
+  void addToCart(ProductModel product, {String? size, String? color}) {
     final existingIndex = _items.indexWhere(
-      (item) => item.product.id == product.id && item.selectedSize == size
+      (item) => item.product.id == product.id && 
+                item.selectedSize == size && 
+                item.selectedColor == color
     );
 
     if (existingIndex >= 0) {
       _items[existingIndex].quantity += 1;
     } else {
-      _items.add(CartItem(product: product, selectedSize: size));
+      _items.add(CartItem(
+        product: product, 
+        selectedSize: size, 
+        selectedColor: color
+      ));
     }
     _resetCoupon(); // Reset coupon if bag changes
     notifyListeners();
     _saveToPrefs();
   }
 
-  void removeFromCart(String productId, String size) {
-    _items.removeWhere((item) => item.product.id == productId && item.selectedSize == size);
+  void removeFromCart(String productId, {String? size, String? color}) {
+    _items.removeWhere((item) => 
+      item.product.id == productId && 
+      item.selectedSize == size && 
+      item.selectedColor == color
+    );
     _resetCoupon();
     notifyListeners();
     _saveToPrefs();
   }
 
-  void updateQuantity(String productId, String size, int newQuantity) {
+  void updateQuantity(String productId, int newQuantity, {String? size, String? color}) {
     final index = _items.indexWhere(
-      (item) => item.product.id == productId && item.selectedSize == size
+      (item) => item.product.id == productId && 
+                item.selectedSize == size && 
+                item.selectedColor == color
     );
     if (index >= 0) {
       if (newQuantity <= 0) {
@@ -65,22 +152,26 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  bool applyCoupon(String code) {
-    final cleanCode = code.toUpperCase().trim();
-    if (cleanCode == 'SHIV20') {
-      _appliedCoupon = 'SHIV20';
-      _couponDiscount = subTotal * 0.20; // 20% off
+  /// Apply coupon using Backend validation
+  Future<bool> applyCoupon(String code) async {
+    if (code.isEmpty) return false;
+    
+    _isValidatingCoupon = true;
+    notifyListeners();
+
+    try {
+      final coupon = await _couponService.validateCoupon(code.toUpperCase().trim(), subTotal);
+      _appliedCoupon = coupon.code;
+      _couponDiscount = coupon.discountAmount;
+      _isValidatingCoupon = false;
       notifyListeners();
       return true;
-    } else if (cleanCode == 'WELCOME100') {
-      _appliedCoupon = 'WELCOME100';
-      _couponDiscount = subTotal > 500 ? 100.0 : 0.0; // Flat 100 off on 500+
-      if (_couponDiscount > 0) {
-        notifyListeners();
-        return true;
-      }
+    } catch (e) {
+      _isValidatingCoupon = false;
+      _resetCoupon();
+      notifyListeners();
+      rethrow; // Allow UI to handle specific error message
     }
-    return false;
   }
 
   void removeCoupon() {
@@ -105,6 +196,7 @@ class CartProvider extends ChangeNotifier {
     final data = _items.map((item) => {
       'product': item.product.toJson(),
       'selectedSize': item.selectedSize,
+      'selectedColor': item.selectedColor,
       'quantity': item.quantity,
     }).toList();
     await prefs.setString(_storageKey, json.encode(data));
@@ -122,7 +214,8 @@ class CartProvider extends ChangeNotifier {
           if (item is Map && item.containsKey('product')) {
             loadedItems.add(CartItem(
               product: ProductModel.fromJson(Map<String, dynamic>.from(item['product'])),
-              selectedSize: item['selectedSize']?.toString() ?? 'M',
+              selectedSize: item['selectedSize']?.toString(),
+              selectedColor: item['selectedColor']?.toString(),
               quantity: int.tryParse(item['quantity']?.toString() ?? '1') ?? 1,
             ));
           } else {

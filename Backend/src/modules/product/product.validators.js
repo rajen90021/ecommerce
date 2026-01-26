@@ -7,8 +7,8 @@ export const validateCreateProduct = [
         .isLength({ min: 2, max: 200 }).withMessage('Product name must be between 2 and 200 characters'),
 
     check('url_slug')
+        .optional()
         .trim()
-        .notEmpty().withMessage('URL slug is required')
         .matches(/^[a-z0-9-]+$/).withMessage('URL slug must contain only lowercase letters, numbers, and hyphens')
         .isLength({ min: 2, max: 100 }).withMessage('URL slug must be between 2 and 100 characters'),
 
@@ -26,12 +26,14 @@ export const validateCreateProduct = [
         .isFloat({ min: 0.01 }).withMessage('Price must be a positive number'),
 
     check('stock_quantity')
-        .notEmpty().withMessage('Stock quantity is required')
-        .isInt({ min: 0 }).withMessage('Stock quantity must be a non-negative integer'),
+        .optional()
+        .isInt({ min: 0 }).withMessage('Stock quantity must be a non-negative integer')
+        .default(0),
 
     check('status')
         .optional()
-        .isIn(['active', 'inactive']).withMessage('Status must be either active or inactive'),
+        .isIn(['active', 'inactive']).withMessage('Status must be either active or inactive')
+        .default('active'),
 
     check('variants')
         .optional()

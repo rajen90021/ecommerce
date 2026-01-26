@@ -17,11 +17,11 @@ const ProductVariant = sequelize.define('productVariant', {
     },
     variant_name: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     },
     variant_value: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     },
     price_adjustment: {
         type: DataTypes.DECIMAL(10, 2),

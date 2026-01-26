@@ -5,12 +5,52 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/wishlist_provider.dart';
 import '../widgets/product_card.dart';
 import 'product_details_screen.dart';
+import 'home_screen.dart';
 
 class WishlistScreen extends StatelessWidget {
-  const WishlistScreen({super.key});
+  final bool isTab;
+  const WishlistScreen({super.key, this.isTab = false});
 
   @override
   Widget build(BuildContext context) {
+    final body = Consumer<WishlistProvider>(
+      builder: (context, wishlist, child) {
+        if (wishlist.items.isEmpty) {
+          return _buildEmptyState(context);
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 0.65,
+          ),
+          itemCount: wishlist.items.length,
+          itemBuilder: (context, index) {
+            final product = wishlist.items[index];
+            return FadeInUp(
+              delay: Duration(milliseconds: index * 50),
+              child: ProductCard(
+                product: product,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProductDetailsScreen(product: product),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (isTab) return body;
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -26,42 +66,21 @@ class WishlistScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0.5,
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(
+            Navigator.canPop(context) ? Icons.arrow_back_ios_rounded : Icons.menu_rounded,
+            color: AppColors.accent,
+          ),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Scaffold.of(context).openDrawer();
+            }
+          },
+        ),
       ),
-      body: Consumer<WishlistProvider>(
-        builder: (context, wishlist, child) {
-          if (wishlist.items.isEmpty) {
-            return _buildEmptyState(context);
-          }
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.65, // Adjusted to fit the new product card design
-            ),
-            itemCount: wishlist.items.length,
-            itemBuilder: (context, index) {
-              final product = wishlist.items[index];
-              return FadeInUp(
-                delay: Duration(milliseconds: index * 50),
-                child: ProductCard(
-                  product: product,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProductDetailsScreen(product: product),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          );
-        },
-      ),
+      body: body,
     );
   }
 
@@ -87,8 +106,16 @@ class WishlistScreen extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                // Since this is likely inside a TabView, we don't necessarily pop.
-                // You might trigger a tab change to home here if desired.
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  // If in tab, we could theoretically use a global key to switch tabs, 
+                  // but a simple pop is safer for most navigation flows.
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    (route) => false,
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,

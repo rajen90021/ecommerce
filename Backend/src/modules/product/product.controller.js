@@ -72,7 +72,7 @@ export const updateProduct = async (req, res, next) => {
             return next(err);
         }
 
-        const product = await productService.updateProduct(req.params.id, req.body, req.file);
+        const product = await productService.updateProduct(req.params.id, req.body, req.files);
         return res.status(200).json({
             success: true,
             message: 'Product updated successfully',

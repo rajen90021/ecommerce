@@ -3,12 +3,39 @@ import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/address_provider.dart';
+import '../../../core/providers/cart_provider.dart';
 import '../models/address_model.dart';
 import 'payment_screen.dart';
 import 'location_picker_screen.dart';
 
-class AddressSelectionScreen extends StatelessWidget {
+class AddressSelectionScreen extends StatefulWidget {
   const AddressSelectionScreen({super.key});
+
+  @override
+  State<AddressSelectionScreen> createState() => _AddressSelectionScreenState();
+}
+
+class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initAddresses();
+    });
+  }
+
+  Future<void> _initAddresses() async {
+    final addressProv = context.read<AddressProvider>();
+    await addressProv.fetchAddresses();
+    if (addressProv.selectedAddress != null) {
+      context.read<CartProvider>().updateShippingFromAddress(addressProv.selectedAddress!.city);
+    }
+  }
+
+  void _handleSelectAddress(AddressProvider provider, AddressModel address) {
+    provider.selectAddress(address);
+    context.read<CartProvider>().updateShippingFromAddress(address.city);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,23 +60,30 @@ class AddressSelectionScreen extends StatelessWidget {
       ),
       body: Consumer<AddressProvider>(
         builder: (context, addressProvider, child) {
+          if (addressProvider.isLoading && addressProvider.addresses.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           return Column(
             children: [
               Expanded(
-                child: addressProvider.addresses.isEmpty
-                    ? _buildEmptyState(context)
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: addressProvider.addresses.length,
-                        itemBuilder: (context, index) {
-                          final address = addressProvider.addresses[index];
-                          final isSelected = addressProvider.selectedAddress?.id == address.id;
-                          return FadeInUp(
-                            delay: Duration(milliseconds: index * 50),
-                            child: _buildAddressCard(context, addressProvider, address, isSelected),
-                          );
-                        },
-                      ),
+                child: RefreshIndicator(
+                  onRefresh: () => addressProvider.fetchAddresses(),
+                  child: addressProvider.addresses.isEmpty
+                      ? _buildEmptyState(context)
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: addressProvider.addresses.length,
+                          itemBuilder: (context, index) {
+                            final address = addressProvider.addresses[index];
+                            final isSelected = addressProvider.selectedAddress?.id == address.id;
+                            return FadeInUp(
+                              delay: Duration(milliseconds: index * 50),
+                              child: _buildAddressCard(context, addressProvider, address, isSelected),
+                            );
+                          },
+                        ),
+                ),
               ),
               _buildBottomButton(context, addressProvider),
             ],
@@ -60,26 +94,38 @@ class AddressSelectionScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.location_on_outlined, size: 80, color: Colors.grey[200]),
-          const SizedBox(height: 20),
-          const Text(
-            'No address saved yet',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(), // Important for RefreshIndicator
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.location_on_outlined, size: 80, color: Colors.grey[200]),
+              const SizedBox(height: 20),
+              const Text(
+                'No address saved yet',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 30),
+              _addAddressButton(context),
+            ],
           ),
-          const SizedBox(height: 30),
-          _addAddressButton(context),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _addAddressButton(BuildContext context) {
     return TextButton.icon(
-      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MapLocationPicker())),
+      onPressed: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => MapLocationPicker()));
+        if (mounted) {
+          // Explicitly refresh when returning from Map to ensure UI sync
+          context.read<AddressProvider>().fetchAddresses();
+        }
+      },
       icon: const Icon(Icons.add_location_alt_rounded, color: AppColors.primary),
       label: const Text(
         'USE GOOGLE MAPS TO ADD',
@@ -95,7 +141,7 @@ class AddressSelectionScreen extends StatelessWidget {
 
   Widget _buildAddressCard(BuildContext context, AddressProvider provider, AddressModel address, bool isSelected) {
     return GestureDetector(
-      onTap: () => provider.selectAddress(address),
+      onTap: () => _handleSelectAddress(provider, address),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
@@ -125,6 +171,17 @@ class AddressSelectionScreen extends StatelessWidget {
                   address.name,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
+                if (address.isDefault) ...[
+                   const SizedBox(width: 8),
+                   Container(
+                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                     decoration: BoxDecoration(
+                       color: Colors.grey[100],
+                       borderRadius: BorderRadius.circular(4),
+                     ),
+                     child: const Text('DEFAULT', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey)),
+                   ),
+                ],
               ],
             ),
             const SizedBox(height: 8),
@@ -142,12 +199,19 @@ class AddressSelectionScreen extends StatelessWidget {
             if (isSelected) ...[
               const SizedBox(height: 16),
               const Divider(),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => provider.removeAddress(address.id!), 
-                  child: const Text('REMOVE', style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold))
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (!address.isDefault)
+                    TextButton(
+                      onPressed: () => provider.setDefaultAddress(address.id!), 
+                      child: const Text('MAKE DEFAULT', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold))
+                    ),
+                  TextButton(
+                    onPressed: () => provider.removeAddress(address.id!), 
+                    child: const Text('REMOVE', style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold))
+                  ),
+                ],
               ),
             ],
           ],
@@ -172,7 +236,7 @@ class AddressSelectionScreen extends StatelessWidget {
             height: 55,
             child: ElevatedButton(
               onPressed: provider.selectedAddress == null ? null : () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentSelectionScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (_) => PaymentSelectionScreen()));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,

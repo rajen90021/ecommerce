@@ -2,12 +2,14 @@ import 'product_model.dart';
 
 class CartItem {
   final ProductModel product;
-  final String selectedSize;
+  final String? selectedSize;
+  final String? selectedColor;
   int quantity;
 
   CartItem({
     required this.product,
-    required this.selectedSize,
+    this.selectedSize,
+    this.selectedColor,
     this.quantity = 1,
   });
 

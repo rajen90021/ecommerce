@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_debounce/easy_debounce.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/product_service.dart';
@@ -6,6 +7,7 @@ import '../models/product_model.dart';
 import '../widgets/product_card.dart';
 import 'product_details_screen.dart';
 import '../widgets/view_bag_widget.dart';
+import '../../../core/widgets/skeleton.dart';
 
 class ProductListingScreen extends StatefulWidget {
   final String title;
@@ -38,6 +40,7 @@ class ProductListingScreen extends StatefulWidget {
 class _ProductListingScreenState extends State<ProductListingScreen> {
   final ProductService _productService = ProductService();
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _localSearchController = TextEditingController();
   
   List<ProductModel> _products = [];
   bool _isLoading = true;
@@ -46,9 +49,10 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
   
   int _currentPage = 1;
   bool _hasMore = true;
+  bool _isSearchActive = false;
   
   // Filter states
-  String _sortBy = 'created_At';
+  String _sortBy = 'createdAt';
   String _sortOrder = 'DESC';
   double? _minPrice;
   double? _maxPrice;
@@ -58,8 +62,33 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
     super.initState();
     if (widget.sortBy != null) _sortBy = widget.sortBy!;
     if (widget.sortOrder != null) _sortOrder = widget.sortOrder!;
+    if (widget.searchQuery != null) {
+      _localSearchController.text = widget.searchQuery!;
+      _isSearchActive = true;
+    }
+    
+    // Add real-time search listener
+    _localSearchController.addListener(_onSearchChanged);
+    
     _fetchProducts();
     _scrollController.addListener(_onScroll);
+  }
+
+  void _onSearchChanged() {
+    // Only trigger if search is actually active to avoid unnecessary calls during init/close
+    if (!_isSearchActive) return;
+    
+    // Use debouncing to prevent excessive API calls
+    EasyDebounce.debounce(
+      'category-search-debounce',
+      const Duration(milliseconds: 500),
+      () {
+        if (mounted) {
+          _currentPage = 1;
+          _fetchProducts();
+        }
+      },
+    );
   }
 
   void _onScroll() {
@@ -84,27 +113,24 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
     try {
       ProductListResponse response;
       
-      if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty) {
-        response = await _productService.searchProducts(
-          query: widget.searchQuery!,
-          page: _currentPage,
-          sortBy: _sortBy,
-          sortOrder: _sortOrder,
-        );
-      } else {
-        response = await _productService.getAllProducts(
-          page: _currentPage,
-          categoryId: widget.categoryId,
-          subcategoryId: widget.subcategoryId,
-          isFeatured: widget.isFeatured,
-          isTrending: widget.isTrending,
-          isNewArrival: widget.isNewArrival,
-          sortBy: _sortBy,
-          sortOrder: _sortOrder,
-          minPrice: _minPrice,
-          maxPrice: _maxPrice,
-        );
-      }
+      // We always use the getAllProducts but pass the search query if active
+      // This allows filtering within a category + search string
+      String? currentQuery = _localSearchController.text.trim();
+      if (currentQuery.isEmpty) currentQuery = null;
+
+      response = await _productService.getAllProducts(
+        page: _currentPage,
+        categoryId: widget.categoryId,
+        subcategoryId: widget.subcategoryId,
+        isFeatured: widget.isFeatured,
+        isTrending: widget.isTrending,
+        isNewArrival: widget.isNewArrival,
+        sortBy: _sortBy,
+        sortOrder: _sortOrder,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        search: currentQuery, // In-category search
+      );
 
       setState(() {
         if (loadMore) {
@@ -159,7 +185,7 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              _buildSortOption('Newest First', 'created_At', 'DESC'),
+              _buildSortOption('Newest First', 'createdAt', 'DESC'),
               _buildSortOption('Price: Low to High', 'price', 'ASC'),
               _buildSortOption('Price: High to Low', 'price', 'DESC'),
               _buildSortOption('Name: A to Z', 'product_name', 'ASC'),
@@ -201,6 +227,7 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _localSearchController.dispose();
     super.dispose();
   }
 
@@ -215,15 +242,22 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
           icon: const Icon(Icons.arrow_back_ios_rounded, color: AppColors.accent),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            color: AppColors.accent,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
+        title: _isSearchActive 
+          ? _buildSearchField()
+          : Text(
+              widget.title,
+              style: const TextStyle(
+                color: AppColors.accent,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
         actions: [
+          if (!_isSearchActive)
+            IconButton(
+              icon: const Icon(Icons.search_rounded, color: AppColors.accent),
+              onPressed: () => setState(() => _isSearchActive = true),
+            ),
           IconButton(
             icon: const Icon(Icons.sort_rounded, color: AppColors.accent),
             onPressed: _showSortOptions,
@@ -249,11 +283,35 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
     );
   }
 
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _localSearchController,
+      autofocus: true,
+      onSubmitted: (value) {
+        _currentPage = 1;
+        _fetchProducts();
+      },
+      decoration: InputDecoration(
+        hintText: 'Search in ${widget.title}...',
+        hintStyle: const TextStyle(fontSize: 14),
+        border: InputBorder.none,
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.close_rounded, size: 20),
+          onPressed: () {
+            _localSearchController.clear();
+            setState(() => _isSearchActive = false);
+            _currentPage = 1;
+            _fetchProducts();
+          },
+        ),
+      ),
+      style: const TextStyle(fontSize: 16),
+    );
+  }
+
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return const ProductListingSkeleton();
     }
 
     if (_errorMessage != null && _products.isEmpty) {
@@ -294,6 +352,14 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
                 fontWeight: FontWeight.w500,
               ),
             ),
+            if (_localSearchController.text.isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  _localSearchController.clear();
+                  _fetchProducts();
+                },
+                child: const Text('Clear Search'),
+              ),
           ],
         ),
       );
@@ -306,13 +372,34 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
         // Product count
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: Text(
-            '${_products.length} Products',
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${_products.length} Products',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_localSearchController.text.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    _localSearchController.clear();
+                    _fetchProducts();
+                  },
+                  child: const Text(
+                    'CLEAR SEARCH',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         

@@ -10,7 +10,13 @@ import {
     resetPassword,
     updateUserProfile,
     verifyOtp,
-    verifyResetOtp
+    verifyResetOtp,
+    getAllUsers,
+    getUserAddresses,
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    setDefaultAddress
 } from './user.controller.js';
 
 import {
@@ -24,8 +30,10 @@ import {
 } from '../auth/auth.validators.js';
 
 import { validateUserProfile } from './user.validators.js';
+import { validateCreateShippingAddress, validateUpdateShippingAddress } from './address.validators.js';
 
 import { authMiddleware } from '../../middleware/authMiddleware.js';
+import { adminOrSuperAdminMiddleware } from './user.middleware.js';
 import { registerRateLimiter } from '../../middleware/rateLimiter.js';
 
 const userRoutes = express.Router();
@@ -55,5 +63,15 @@ userRoutes.put("/user-profile", authMiddleware, upload.single('image'), validate
 userRoutes.post('/forgot-password', forgotPasswordValidation, forgotPassword);
 userRoutes.post('/verify-reset-otp', verifyOtpValidation, verifyResetOtp);
 userRoutes.post('/reset-password', resetPasswordValidation, resetPassword);
+
+// Admin routes
+userRoutes.get('/admin/all-users', authMiddleware, adminOrSuperAdminMiddleware, getAllUsers);
+
+// Address routes
+userRoutes.get('/addresses', authMiddleware, getUserAddresses);
+userRoutes.post('/addresses', authMiddleware, validateCreateShippingAddress, addAddress);
+userRoutes.put('/addresses/:id', authMiddleware, validateUpdateShippingAddress, updateAddress);
+userRoutes.delete('/addresses/:id', authMiddleware, deleteAddress);
+userRoutes.put('/addresses/:id/set-default', authMiddleware, setDefaultAddress);
 
 export default userRoutes;

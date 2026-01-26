@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import './app_colors.dart';
 
 class AppTheme {
@@ -16,20 +15,13 @@ class AppTheme {
         onPrimary: Colors.white,
       ),
       
-      // Modern Text Theme
-      textTheme: GoogleFonts.montserratTextTheme().copyWith(
-        displayLarge: GoogleFonts.playfairDisplay(
-          fontWeight: FontWeight.bold,
-          color: AppColors.accent,
-        ),
-        displayMedium: GoogleFonts.playfairDisplay(
-          fontWeight: FontWeight.bold,
-          color: AppColors.accent,
-        ),
-        titleLarge: GoogleFonts.montserrat(
-          fontWeight: FontWeight.w700,
-          color: AppColors.accent,
-        ),
+      // Modern Text Theme (Fallbacks to default to prevent blocking startup)
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent, fontSize: 32),
+        displayMedium: TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent, fontSize: 24),
+        titleLarge: TextStyle(fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 20),
+        bodyLarge: TextStyle(color: AppColors.accent, fontSize: 16),
+        bodyMedium: TextStyle(color: AppColors.accent, fontSize: 14),
       ),
       
       // Premium App Bar
@@ -51,44 +43,6 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: GoogleFonts.montserrat(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.1,
-          ),
-        ),
-      ),
-      
-      // Modern Card Theme
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: AppColors.cardBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Colors.black.withOpacity(0.04), width: 1),
-        ),
-      ),
-      
-      // Input Decorations
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        hintStyle: GoogleFonts.montserrat(
-          color: AppColors.textHint,
-          fontSize: 14,
         ),
       ),
     );

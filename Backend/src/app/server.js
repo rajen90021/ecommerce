@@ -1,3 +1,4 @@
+// Role cleanup applied
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -9,6 +10,10 @@ import categoryRoutes from '../modules/category/category.routes.js';
 import productRoutes from '../modules/product/product.routes.js';
 import orderRoutes from '../modules/order/order.routes.js';
 import wishlistRoutes from '../modules/wishlist/wishlist.routes.js';
+import offerRoutes from '../modules/offer/offer.routes.js';
+import notificationRoutes from '../modules/notification/notification.routes.js';
+import dashboardRoutes from '../modules/dashboard/dashboard.routes.js';
+import locationRoutes from '../modules/location/location.routes.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import '../database/associations.js'; // Import associations
 import { connectDB } from '../database/connection.js';
@@ -35,6 +40,10 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/offers', offerRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/locations', locationRoutes);
 
 
 // middleware for error handling

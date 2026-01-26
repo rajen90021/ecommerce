@@ -1,3 +1,4 @@
+import 'package:easy_debounce/easy_debounce.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
@@ -19,6 +20,7 @@ import 'wishlist_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/view_bag_widget.dart';
 import '../widgets/delivery_promise_banner.dart';
+import '../../../core/widgets/skeleton.dart';
 
 class HomeScreen extends StatefulWidget {
   final String? userName;
@@ -29,6 +31,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _page = 0;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -77,21 +80,26 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    setState(() => _isSearching = true);
-
-    try {
-      final response = await _productService.searchProducts(
-        query: query,
-        autocomplete: true,
-      );
-      setState(() {
-        _suggestions = response.suggestions;
-        _isSearching = false;
-      });
-    } catch (e) {
-      debugPrint('Error fetching suggestions: $e');
-      setState(() => _isSearching = false);
-    }
+    EasyDebounce.debounce(
+      'search-debounce',
+      const Duration(milliseconds: 500),
+      () async {
+        setState(() => _isSearching = true);
+        try {
+          final response = await _productService.searchProducts(
+            query: query,
+            autocomplete: true,
+          );
+          setState(() {
+            _suggestions = response.suggestions;
+            _isSearching = false;
+          });
+        } catch (e) {
+          debugPrint('Error fetching suggestions: $e');
+          setState(() => _isSearching = false);
+        }
+      },
+    );
   }
 
   Future<void> _fetchData() async {
@@ -161,15 +169,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.surface,
       extendBody: true,
-      appBar: HomeAppBar(isScrolled: _isScrolled),
+      appBar: _buildDynamicAppBar(),
       drawer: HomeDrawer(
         userName: widget.userName,
         currentIndex: _page,
         onPageChange: (index) {
           setState(() => _page = index);
-          Navigator.pop(context); // Close drawer
         },
       ),
       bottomNavigationBar: HomeBottomNavBar(
@@ -186,10 +194,50 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildBody(),
             ),
           ),
+          if (_suggestions.isNotEmpty && _page == 0) ...[
+            GestureDetector(
+              onTap: () => setState(() => _suggestions = []),
+              child: Container(color: Colors.black.withOpacity(0.01)),
+            ),
+            _buildSuggestionsOverlay(),
+          ],
           const ViewBagWidget(),
         ],
       ),
     );
+  }
+
+  PreferredSizeWidget? _buildDynamicAppBar() {
+    switch (_page) {
+      case 0:
+        return HomeAppBar(isScrolled: _isScrolled);
+      case 1:
+        return AppBar(
+          title: const Text('All Categories', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 18)),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppColors.accent),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        );
+      case 2:
+        return AppBar(
+          title: const Text('My Wishlist', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1)),
+          backgroundColor: Colors.white,
+          elevation: 0.5,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppColors.accent),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        );
+      case 3:
+        return null; // Profile has its own fancy header
+      default:
+        return HomeAppBar(isScrolled: _isScrolled);
+    }
   }
 
   Widget _buildBody() {
@@ -197,9 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return _buildHomeView();
       case 1:
-        return FadeIn(child: const CategoriesScreen());
+        return FadeIn(child: const CategoriesScreen(isTab: true));
       case 2:
-        return FadeIn(child: const WishlistScreen());
+        return FadeIn(child: const WishlistScreen(isTab: true));
       case 3:
         return FadeIn(child: const ProfileScreen());
       default:
@@ -209,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeView() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return const HomeScreenSkeleton();
     }
 
     if (_errorMessage != null && _featuredProducts.isEmpty) {
@@ -360,59 +408,69 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        if (_suggestions.isNotEmpty)
-          FadeIn(
-            child: Container(
-              margin: const EdgeInsets.only(top: 8, left: 4, right: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _suggestions.length,
-                separatorBuilder: (context, index) => Divider(
-                  height: 1,
-                  color: Colors.grey[100],
-                  indent: 16,
-                  endIndent: 16,
+      ],
+    );
+  }
+
+  Widget _buildSuggestionsOverlay() {
+    return Positioned(
+      top: 155, // Adjusted for HomeAppBar + Welcome Header spacing
+      left: 20,
+      right: 20,
+      child: Material(
+        elevation: 8,
+        color: Colors.transparent,
+        child: FadeIn(
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 400),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
-                itemBuilder: (context, index) {
-                  final product = _suggestions[index];
-                  return ListTile(
-                    leading: const Icon(Icons.search_rounded,
-                        color: Colors.grey, size: 18),
-                    title: Text(
-                      product.name,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    trailing: Text(
-                      '₹${product.price.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    onTap: () {
-                      setState(() => _suggestions = []);
-                      _navigateToProductDetails(product);
-                    },
-                  );
-                },
+              ],
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: _suggestions.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: Colors.grey[100],
+                indent: 16,
+                endIndent: 16,
               ),
+              itemBuilder: (context, index) {
+                final product = _suggestions[index];
+                return ListTile(
+                  leading: const Icon(Icons.search_rounded,
+                      color: Colors.grey, size: 18),
+                  title: Text(
+                    product.name,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  trailing: Text(
+                    '₹${product.price.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() => _suggestions = []);
+                    _navigateToProductDetails(product);
+                  },
+                );
+              },
             ),
           ),
-      ],
+        ),
+      ),
     );
   }
 
@@ -437,10 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ProductListingScreen(
-                  title: 'All Categories',
-                  searchQuery: '',
-                ),
+                builder: (_) => const CategoriesScreen(),
               ),
             );
           },

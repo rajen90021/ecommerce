@@ -5,6 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/screens/phone_auth_screen.dart';
+import '../screens/top_offers_screen.dart';
+import '../screens/my_orders_screen.dart';
+import '../screens/shipping_addresses_screen.dart';
+import '../screens/help_center_screen.dart';
+import '../screens/notifications_screen.dart';
+import '../screens/privacy_security_screen.dart';
 
 class HomeDrawer extends StatelessWidget {
   final String? userName;
@@ -53,24 +59,53 @@ class HomeDrawer extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
+                   const SizedBox(height: 20),
                   _buildSectionLabel('SHOP'),
-                  _drawerItem(Icons.home_filled, "Search & Shop", _onItemTap(0), currentIndex == 0),
-                  _drawerItem(Icons.category_rounded, "Categories", _onItemTap(1), currentIndex == 1),
-                  _drawerItem(Icons.local_offer_rounded, "Top Offers", null, false),
+                  _drawerItem(Icons.category_rounded, "Categories", _onItemTap(context, 1), currentIndex == 1),
+                  _drawerItem(
+                    Icons.local_offer_rounded, 
+                    "Top Offers", 
+                    () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const TopOffersScreen())); }, 
+                    false,
+                  ),
                   
                   const SizedBox(height: 24),
                   _buildSectionLabel('MY ACCOUNT'),
-                  _drawerItem(Icons.person_rounded, "My Profile", _onItemTap(3), currentIndex == 3),
-                  _drawerItem(Icons.shopping_bag_rounded, "My Orders", null, false),
-                  _drawerItem(Icons.favorite_rounded, "Wishlist", _onItemTap(2), currentIndex == 2),
-                  _drawerItem(Icons.location_on_rounded, "Addresses", null, false),
+                  _drawerItem(Icons.person_rounded, "My Profile", _onItemTap(context, 3), currentIndex == 3),
+                  _drawerItem(
+                    Icons.shopping_bag_rounded, 
+                    "My Orders", 
+                    () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const MyOrdersScreen())); }, 
+                    false,
+                  ),
+                  _drawerItem(Icons.favorite_rounded, "Wishlist", _onItemTap(context, 2), currentIndex == 2),
+                  _drawerItem(
+                    Icons.location_on_rounded, 
+                    "Addresses", 
+                    () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ShippingAddressesScreen())); }, 
+                    false,
+                  ),
                   
                   const SizedBox(height: 24),
                   _buildSectionLabel('SUPPORT & SETTINGS'),
-                  _drawerItem(Icons.help_center_rounded, "Help Center", null, false),
-                  _drawerItem(Icons.notifications_active_rounded, "Notification Settings", null, false),
-                  _drawerItem(Icons.security_rounded, "Privacy Policy", null, false),
+                  _drawerItem(
+                    Icons.help_center_rounded, 
+                    "Help Center", 
+                    () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterScreen())); }, 
+                    false,
+                  ),
+                  _drawerItem(
+                    Icons.notifications_active_rounded, 
+                    "Notification Settings", 
+                    () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())); }, 
+                    false,
+                  ),
+                  _drawerItem(
+                    Icons.security_rounded, 
+                    "Privacy Policy", 
+                    () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen())); }, 
+                    false,
+                  ),
                 ],
               ),
             ),
@@ -186,8 +221,9 @@ class HomeDrawer extends StatelessWidget {
     );
   }
 
-  VoidCallback? _onItemTap(int index) {
+  VoidCallback? _onItemTap(BuildContext context, int index) {
     return () {
+      Navigator.pop(context);
       if (onPageChange != null) {
         onPageChange!(index);
       }

@@ -11,6 +11,10 @@ const Address = sequelize.define('address', {
         type: DataTypes.UUID,
         allowNull: false,
     },
+    full_name: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     address_line1: {
         type: DataTypes.STRING,
         allowNull: false

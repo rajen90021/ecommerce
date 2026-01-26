@@ -169,3 +169,61 @@ export const updateUserProfile = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getAllUsers = async (req, res, next) => {
+    try {
+        const result = await userService.getAllUsers(req.query);
+        return res.status(200).json({
+            success: true,
+            ...result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Address Controllers
+export const getUserAddresses = async (req, res, next) => {
+    try {
+        const addresses = await userService.getUserAddresses(req.user.userId);
+        return res.status(200).json({ success: true, addresses });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const addAddress = async (req, res, next) => {
+    try {
+        const address = await userService.addAddress(req.user.userId, req.body);
+        return res.status(201).json({ success: true, message: 'Address added successfully', address });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateAddress = async (req, res, next) => {
+    try {
+        const address = await userService.updateAddress(req.user.userId, req.params.id, req.body);
+        return res.status(200).json({ success: true, message: 'Address updated successfully', address });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteAddress = async (req, res, next) => {
+    try {
+        const result = await userService.deleteAddress(req.user.userId, req.params.id);
+        return res.status(200).json({ success: true, ...result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const setDefaultAddress = async (req, res, next) => {
+    try {
+        const address = await userService.setDefaultAddress(req.user.userId, req.params.id);
+        return res.status(200).json({ success: true, message: 'Default address updated', address });
+    } catch (error) {
+        next(error);
+    }
+};

@@ -6,26 +6,17 @@ export const validateCreateOrder = [
 
     check('items.*.product_id')
         .notEmpty().withMessage('Product ID is required for each item')
-        .isUUID().withMessage('Product ID must be valid'),
+        .isString().withMessage('Product ID must be valid'),
 
     check('items.*.quantity')
         .isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
 
     check('shipping_address_id')
-        .optional()
-        .custom((value) => {
-            if (value === null || value === undefined || value === '') {
-                return true;
-            }
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-            if (!uuidRegex.test(value)) {
-                throw new Error('Shipping address ID must be a valid UUID');
-            }
-            return true;
-        }),
+        .optional({ nullable: true, checkFalsy: true })
+        .notEmpty().withMessage('Shipping address ID cannot be empty'),
 
     check('custom_shipping_address')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isObject().withMessage('Custom shipping address must be an object'),
 
     check('custom_shipping_address.address_line1')
@@ -49,15 +40,15 @@ export const validateCreateOrder = [
         .matches(/^[a-zA-Z0-9\s-]{3,10}$/).withMessage('Postal code must be valid'),
 
     check('coupon_code')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isString().withMessage('Coupon code must be a string'),
 
     check('payment_type')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isIn(['netbanking', 'upi', 'cod']).withMessage('Payment type must be netbanking, upi, or cod'),
 
     check('payment_transaction_id')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isString().withMessage('Payment transaction ID must be a string'),
 
     check()
@@ -75,7 +66,7 @@ export const validateCreateOrder = [
 export const validateUpdateOrderStatus = [
     check('status')
         .notEmpty().withMessage('Status is required')
-        .isIn(['placed', 'processing', 'shipping', 'delivered']).withMessage('Invalid status'),
+        .isIn(['placed', 'confirmed', 'processing', 'shipping', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned']).withMessage('Invalid status'),
 ];
 
 export const validateUpdatePaymentStatus = [
@@ -84,6 +75,6 @@ export const validateUpdatePaymentStatus = [
         .isIn(['paid', 'not_paid']).withMessage('Payment status must be paid or not_paid'),
 
     check('payment_transaction_id')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isString().withMessage('Payment transaction ID must be a string'),
 ];

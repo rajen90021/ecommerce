@@ -10,6 +10,7 @@ import 'package:animate_do/animate_do.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/top_toast.dart';
 import '../../../core/providers/address_provider.dart';
+import '../../../core/services/location_service.dart';
 import '../models/address_model.dart';
 
 class MapLocationPicker extends StatefulWidget {
@@ -33,12 +34,44 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   final _areaController = TextEditingController();
   
   String? _primaryPhone;
+  List<LocationModel> _serviceableLocations = [];
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _fetchServiceableLocations();
     _getCurrentLocation();
+  }
+
+  Future<void> _fetchServiceableLocations() async {
+    try {
+      final locs = await _locationService.getActiveLocations();
+      debugPrint("Fetched ${locs.length} serviceable locations from backend");
+      
+      setState(() {
+        if (locs.isNotEmpty) {
+          _serviceableLocations = locs;
+        } else {
+          // Fallback if backend is empty (development safety)
+          debugPrint("Backend locations empty, using default fallbacks");
+          _serviceableLocations = [
+            LocationModel(id: 'default-1', cityName: 'Kalimpong', state: 'West Bengal', isActive: true, deliveryCharge: 50, minOrderAmount: 0),
+            LocationModel(id: 'default-2', cityName: 'Siliguri', state: 'West Bengal', isActive: true, deliveryCharge: 50, minOrderAmount: 0),
+          ];
+        }
+      });
+    } catch (e) {
+      debugPrint("Error fetching locations: $e");
+      setState(() {
+         // Error fallback
+        _serviceableLocations = [
+          LocationModel(id: 'err-1', cityName: 'Kalimpong', state: 'West Bengal', isActive: true, deliveryCharge: 50, minOrderAmount: 0),
+          LocationModel(id: 'err-2', cityName: 'Siliguri', state: 'West Bengal', isActive: true, deliveryCharge: 50, minOrderAmount: 0),
+        ];
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -151,7 +184,9 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Currently, we are delivering only in Kalimpong & Siliguri. Hang tight, we will be in your place soon!',
+                _serviceableLocations.isEmpty 
+                  ? 'Currently, we are not delivering to this area. Hang tight, we will be in your place soon!'
+                  : 'Currently, we are delivering only in ${_serviceableLocations.map((e) => e.cityName).join(" & ")}. Hang tight, we will be in your place soon!',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.5),
               ),
@@ -263,16 +298,44 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     }
 
     try {
+      // One last try to fetch if list is empty
+      if (_serviceableLocations.isEmpty) {
+        await _fetchServiceableLocations();
+      }
+
       List<Placemark> p = await placemarkFromCoordinates(_lastSelectedPos.latitude, _lastSelectedPos.longitude);
       final placemark = p.first;
       
-      final String city = (placemark.locality ?? '').toLowerCase();
-      final String district = (placemark.subAdministrativeArea ?? '').toLowerCase();
+      // Greediest matching: Combine every possible field to find a city name
+      final String fullAddress = [
+        placemark.name,
+        placemark.subLocality,
+        placemark.locality,
+        placemark.subAdministrativeArea,
+        placemark.administrativeArea,
+        placemark.thoroughfare,
+        placemark.street,
+        placemark.postalCode,
+      ].map((e) => (e ?? '').trim().toLowerCase()).join(' ');
       
-      bool isServiceable = city.contains('kalimpong') || 
-                          city.contains('siliguri') || 
-                          district.contains('kalimpong') || 
-                          district.contains('darjeeling');
+      debugPrint("Validating address area: $fullAddress");
+      
+      bool isServiceable = _serviceableLocations.any((loc) {
+        final cityName = loc.cityName.trim().toLowerCase();
+        return fullAddress.contains(cityName) || cityName.contains(fullAddress) && fullAddress.length > 5;
+      });
+
+      // Special check for Kalimpong/Siliguri regions if not explicitly in string
+      if (!isServiceable) {
+        final String regionalCheck = "${placemark.locality} ${placemark.subAdministrativeArea} ${placemark.administrativeArea}".toLowerCase();
+        if (regionalCheck.contains('darjeeling') || regionalCheck.contains('kalimpong') || placemark.postalCode?.startsWith('734') == true) {
+           isServiceable = _serviceableLocations.any((loc) {
+             final c = loc.cityName.toLowerCase();
+             return c.contains('siliguri') || c.contains('kalimpong');
+           });
+           debugPrint("Regional fallback check: $isServiceable");
+        }
+      }
 
       if (!isServiceable) {
         Navigator.pop(context); // Close sheet
@@ -288,16 +351,25 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
         city: placemark.locality ?? '',
         state: placemark.administrativeArea ?? '',
         pincode: placemark.postalCode ?? '',
+        country: placemark.country ?? 'India',
         isDefault: true,
       );
 
       if (!mounted) return;
-      Provider.of<AddressProvider>(context, listen: false).addAddress(address);
-      Navigator.pop(context); // Close sheet
-      Navigator.pop(context); // Exit map
-      TopToast.show(context, "Address saved successfully!");
+      
+      // We must await this to ensure the address is saved on the BE before we pop 
+      // and refresh the previous screen's UI
+      await Provider.of<AddressProvider>(context, listen: false).addAddress(address);
+      
+      if (mounted) {
+        Navigator.pop(context); // Close sheet
+        Navigator.pop(context); // Exit map
+        TopToast.show(context, "Address saved successfully!");
+      }
     } catch (e) {
-      TopToast.show(context, "Error saving location", isError: true);
+      if (mounted) {
+        TopToast.show(context, "Error saving location: ${e.toString()}", isError: true);
+      }
     }
   }
 

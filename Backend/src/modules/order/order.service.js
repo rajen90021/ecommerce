@@ -6,6 +6,8 @@ import OrderItem from './order-item.model.js';
 import OrderShippingAddress from './order-shipping-address.model.js';
 import ProductVariant from '../product/product-variant.model.js';
 import Product from '../product/product.model.js';
+import User from '../user/user.model.js';
+import offerService from '../offer/offer.service.js';
 
 const generateOrderNumber = () => {
     const timestamp = Date.now().toString();
@@ -13,26 +15,31 @@ const generateOrderNumber = () => {
     return `ORD-${timestamp}-${random}`;
 };
 
-const calculateOrderAmounts = (items, discountCode = null, shippingAmount = 0) => {
-    let totalAmount = 0;
+const calculateOrderAmounts = async (items, discountCode = null, shippingAmount = 0) => {
+    let subtotal = 0;
     for (const item of items) {
-        totalAmount += item.total_amount;
+        subtotal += (item.price * item.quantity);
     }
 
-    let grossAmount = totalAmount;
     let discountAmount = 0;
 
     if (discountCode) {
-        discountAmount = grossAmount * 0.1;
-        grossAmount = totalAmount - discountAmount;
+        try {
+            const validation = await offerService.validateCoupon(discountCode, subtotal);
+            discountAmount = validation.discount_amount;
+        } catch (e) {
+            // If coupon fails during final order, we could either throw or proceed without discount
+            // Standard practice is to throw so user knows why price changed
+            throw e;
+        }
     }
 
-    const netAmount = grossAmount + shippingAmount;
+    const netAmount = (subtotal - discountAmount) + shippingAmount;
 
     return {
-        total_amount: totalAmount,
+        total_amount: subtotal,
         discount_amount: discountAmount,
-        gross_amount: grossAmount,
+        gross_amount: subtotal - discountAmount,
         shipping_amount: shippingAmount,
         net_amount: netAmount
     };
@@ -73,7 +80,7 @@ class OrderService {
 
             const product = await productRepository.findById(product_id); // Assuming this exists or use Product.findByPk
 
-            if (!product || !product.is_active) {
+            if (!product || product.status !== 'active') {
                 const error = new Error(`Product not found or inactive`);
                 error.statusCode = 404;
                 throw error;
@@ -124,11 +131,13 @@ class OrderService {
             }
             // Use address fields from savedAddress
             shippingAddressData = {
+                full_name: savedAddress.full_name,
                 address_line1: savedAddress.address_line1,
+                address_line2: savedAddress.address_line2,
                 city: savedAddress.city,
                 state: savedAddress.state,
                 postal_code: savedAddress.postal_code,
-                country: savedAddress.country,
+                country: savedAddress.country || 'India',
                 phone: savedAddress.phone
             };
         } else {
@@ -137,7 +146,7 @@ class OrderService {
             throw error;
         }
 
-        const amounts = calculateOrderAmounts(orderItemsData, coupon_code, 50);
+        const amounts = await calculateOrderAmounts(orderItemsData, coupon_code, 50);
 
         // 4. Execution within Transaction
         return await sequelize.transaction(async (t) => {
@@ -182,7 +191,9 @@ class OrderService {
             await orderRepository.createShippingAddress({
                 order_id: order.id,
                 shipping_address_id: shipping_address_id || null,
-                address_line1: shippingAddressData.address_line1, // Map correctly
+                full_name: shippingAddressData.full_name,
+                address_line1: shippingAddressData.address_line1,
+                address_line2: shippingAddressData.address_line2,
                 city: shippingAddressData.city,
                 state: shippingAddressData.state,
                 country: shippingAddressData.country,
@@ -218,7 +229,7 @@ class OrderService {
                 {
                     model: OrderShippingAddress,
                     as: 'shippingAddress',
-                    attributes: ['full_address', 'state', 'city', 'zip_code']
+                    attributes: ['full_name', 'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country', 'phone']
                 }
             ]
         });
@@ -245,7 +256,7 @@ class OrderService {
             {
                 model: OrderShippingAddress,
                 as: 'shippingAddress',
-                attributes: ['full_address', 'state', 'city', 'zip_code']
+                attributes: ['full_name', 'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country', 'phone']
             }
         ]);
 
@@ -334,7 +345,12 @@ class OrderService {
             order: [[sortBy, sortOrder.toUpperCase()]],
             include: [
                 { model: OrderItem, as: 'orderItems' },
-                { model: OrderShippingAddress, as: 'shippingAddress' }
+                { model: OrderShippingAddress, as: 'shippingAddress' },
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'name', 'email', 'phone', 'image']
+                }
             ]
         });
 
@@ -357,6 +373,50 @@ class OrderService {
         // Ideally, move aggregation to repository for better DB abstraction
         return await orderRepository.getStats(period);
     }
+
+    /**
+     * Update delivery tracking information
+     */
+    async updateDeliveryTracking(id, trackingData) {
+        const order = await orderRepository.findByPk(id);
+        if (!order) {
+            const error = new Error('Order not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const { tracking_number, delivery_partner, estimated_delivery_date, delivery_notes } = trackingData;
+
+        if (tracking_number) order.tracking_number = tracking_number;
+        if (delivery_partner) order.delivery_partner = delivery_partner;
+        if (estimated_delivery_date) order.estimated_delivery_date = estimated_delivery_date;
+        if (delivery_notes) order.delivery_notes = delivery_notes;
+
+        order.updatedAt = new Date();
+        return await orderRepository.save(order);
+    }
+
+    /**
+     * Mark order as delivered
+     */
+    async markAsDelivered(id, deliveryData = {}) {
+        const order = await orderRepository.findByPk(id);
+        if (!order) {
+            const error = new Error('Order not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        order.status = 'delivered';
+        order.actual_delivery_date = deliveryData.actual_delivery_date || new Date();
+        if (deliveryData.delivery_notes) {
+            order.delivery_notes = deliveryData.delivery_notes;
+        }
+        order.updatedAt = new Date();
+
+        return await orderRepository.save(order);
+    }
+
 }
 
 export default new OrderService();

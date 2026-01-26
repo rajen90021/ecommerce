@@ -1,5 +1,7 @@
 import userRepository from './user.repository.js';
+import config from '../../config/config.js';
 import User from './user.model.js';
+import Address from './address.model.js';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
@@ -122,8 +124,8 @@ class UserService {
 
         const token = jwt.sign(
             { userId: user.id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRATION }
+            config.jwt.secret,
+            { expiresIn: config.jwt.expiration }
         );
 
         const userJson = user.toJSON();
@@ -190,8 +192,8 @@ class UserService {
 
         const token = jwt.sign(
             { userId: user.id },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRATION }
+            config.jwt.secret,
+            { expiresIn: config.jwt.expiration }
         );
 
         const userJson = user.toJSON();
@@ -406,6 +408,163 @@ class UserService {
         response.roles = updatedUser.roles.map(r => r.role_name);
 
         return response;
+    }
+
+    async getAllUsers(params = {}) {
+        const { page = 1, limit = 10, role } = params;
+        const offset = (page - 1) * limit;
+
+        const where = {};
+        const include = [
+            {
+                model: User.sequelize.models.role,
+                as: 'roles',
+                through: { attributes: [] },
+                attributes: ['role_name']
+            },
+            {
+                model: Address,
+                as: 'addresses'
+            }
+        ];
+
+        if (role) {
+            include[0].where = { role_name: role };
+        }
+
+        const { count, rows } = await User.findAndCountAll({
+            where,
+            include,
+            distinct: true, // Required when including multiple models to get correct count
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            order: [['created_at', 'DESC']]
+        });
+
+        const users = rows.map(u => {
+            const userJson = u.toJSON();
+            delete userJson.password;
+            delete userJson.otp_code;
+            delete userJson.otp_expires_at;
+            delete userJson.reset_otp;
+            delete userJson.reset_otp_expires_at;
+            userJson.roles = u.roles.map(r => r.role_name);
+            return userJson;
+        });
+
+        return {
+            users,
+            total: count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: parseInt(page)
+        };
+    }
+
+    // Address Management
+    async getUserAddresses(userId) {
+        return await userRepository.findAddressesByUserId(userId);
+    }
+
+    async addAddress(userId, data) {
+        const { is_default } = data;
+
+        return await sequelize.transaction(async (t) => {
+            if (is_default) {
+                // Unset other defaults
+                await Address.update(
+                    { is_default: false },
+                    { where: { user_id: userId }, transaction: t }
+                );
+            }
+
+            const addressCount = await Address.count({ where: { user_id: userId } });
+
+            const newAddress = await userRepository.createAddress({
+                id: uuidv4(),
+                user_id: userId,
+                ...data,
+                is_default: addressCount === 0 ? true : (is_default || false),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            }, t);
+
+            return newAddress;
+        });
+    }
+
+    async updateAddress(userId, addressId, data) {
+        const { is_default } = data;
+        const address = await Address.findOne({ where: { id: addressId, user_id: userId } });
+
+        if (!address) {
+            const error = new Error('Address not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return await sequelize.transaction(async (t) => {
+            if (is_default) {
+                // Unset other defaults
+                await Address.update(
+                    { is_default: false },
+                    { where: { user_id: userId }, transaction: t }
+                );
+            }
+
+            await address.update({
+                ...data,
+                updatedAt: new Date()
+            }, { transaction: t });
+
+            return address;
+        });
+    }
+
+    async deleteAddress(userId, addressId) {
+        const address = await Address.findOne({ where: { id: addressId, user_id: userId } });
+        if (!address) {
+            const error = new Error('Address not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const wasDefault = address.is_default;
+        await address.destroy();
+
+        // If we deleted the default, make the most recent one default
+        if (wasDefault) {
+            const nextAddress = await Address.findOne({
+                where: { user_id: userId },
+                order: [['created_at', 'DESC']]
+            });
+            if (nextAddress) {
+                nextAddress.is_default = true;
+                await nextAddress.save();
+            }
+        }
+
+        return { message: 'Address deleted successfully' };
+    }
+
+    async setDefaultAddress(userId, addressId) {
+        const address = await Address.findOne({ where: { id: addressId, user_id: userId } });
+        if (!address) {
+            const error = new Error('Address not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return await sequelize.transaction(async (t) => {
+            await Address.update(
+                { is_default: false },
+                { where: { user_id: userId }, transaction: t }
+            );
+
+            address.is_default = true;
+            await address.save({ transaction: t });
+
+            return address;
+        });
     }
 }
 

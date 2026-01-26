@@ -7,7 +7,9 @@ import {
     updatePaymentStatus,
     cancelOrder,
     getAllOrders,
-    getOrderStatistics
+    getOrderStatistics,
+    updateDeliveryTracking,
+    markAsDelivered
 } from './order.controller.js';
 
 import { authMiddleware } from '../../middleware/authMiddleware.js';
@@ -29,5 +31,9 @@ orderRoutes.put('/:id/cancel', cancelOrder);
 orderRoutes.get('/admin/all', authMiddleware, adminOrSuperAdminMiddleware, getAllOrders);
 orderRoutes.get('/admin/statistics', authMiddleware, adminOrSuperAdminMiddleware, getOrderStatistics);
 orderRoutes.put('/admin/:id/status', authMiddleware, adminOrSuperAdminMiddleware, validateUpdateOrderStatus, updateOrderStatus);
+
+// Delivery tracking routes (optional - for future use)
+orderRoutes.put('/admin/:id/delivery-tracking', authMiddleware, adminOrSuperAdminMiddleware, updateDeliveryTracking);
+orderRoutes.put('/admin/:id/mark-delivered', authMiddleware, adminOrSuperAdminMiddleware, markAsDelivered);
 
 export default orderRoutes;

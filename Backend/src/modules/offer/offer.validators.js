@@ -1,14 +1,13 @@
 import { check } from 'express-validator';
 
 export const validateCreateOffer = [
-    check('coupon_code')
+    check('code')
         .notEmpty().withMessage('Coupon code is required')
-        .isLength({ min: 3, max: 20 }).withMessage('Coupon code must be between 3 and 20 characters')
-        .matches(/^[A-Z0-9]+$/).withMessage('Coupon code must contain only uppercase letters and numbers'),
+        .isLength({ min: 3, max: 20 }).withMessage('Coupon code must be between 3 and 20 characters'),
 
     check('discount_type')
         .notEmpty().withMessage('Discount type is required')
-        .isIn(['fixed', 'rate']).withMessage('Discount type must be fixed or rate'),
+        .isIn(['fixed', 'percentage']).withMessage('Discount type must be fixed or percentage'),
 
     check('discount_value')
         .notEmpty().withMessage('Discount value is required')
@@ -44,14 +43,13 @@ export const validateCreateOffer = [
 ];
 
 export const validateUpdateOffer = [
-    check('coupon_code')
+    check('code')
         .optional()
-        .isLength({ min: 3, max: 20 }).withMessage('Coupon code must be between 3 and 20 characters')
-        .matches(/^[A-Z0-9]+$/).withMessage('Coupon code must contain only uppercase letters and numbers'),
+        .isLength({ min: 3, max: 20 }).withMessage('Coupon code must be between 3 and 20 characters'),
 
     check('discount_type')
         .optional()
-        .isIn(['fixed', 'rate']).withMessage('Discount type must be fixed or rate'),
+        .isIn(['fixed', 'percentage']).withMessage('Discount type must be fixed or percentage'),
 
     check('discount_value')
         .optional()

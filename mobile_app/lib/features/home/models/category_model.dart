@@ -15,11 +15,11 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
-      id: json['id'],
-      name: json['category_name'],
-      imageUrl: json['image_url'],
-      parentCatId: json['parent_cat_id'],
-      urlSlug: json['url_slug'],
+      id: json['id']?.toString() ?? 'unknown-cat-id',
+      name: json['category_name']?.toString() ?? 'Unnamed Category',
+      imageUrl: json['image_url']?.toString(),
+      parentCatId: json['parent_cat_id']?.toString(),
+      urlSlug: json['url_slug']?.toString(),
     );
   }
 

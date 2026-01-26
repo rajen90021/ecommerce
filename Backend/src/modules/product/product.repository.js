@@ -25,6 +25,10 @@ class ProductRepository {
         return await Product.findByPk(id);
     }
 
+    async findOne(options) {
+        return await Product.findOne(options);
+    }
+
     async findById(id, { includeRelations = false } = {}) {
         if (!includeRelations) return await Product.findByPk(id);
 
@@ -79,8 +83,8 @@ class ProductRepository {
     async delete(id) {
         const product = await Product.findByPk(id);
         if (product) {
-            product.status = 'inactive';
-            return await product.save();
+            // Hard delete the product
+            return await product.destroy();
         }
         return null;
     }
@@ -102,6 +106,20 @@ class ProductRepository {
             { status: 'inactive', updatedAt: new Date() },
             { where: { product_id: productId }, transaction }
         );
+    }
+
+    async removeVariants(productId, transaction = null) {
+        return await ProductVariant.destroy({
+            where: { product_id: productId },
+            transaction
+        });
+    }
+
+    async removeVariantsWhere(whereClause, transaction = null) {
+        return await ProductVariant.destroy({
+            where: whereClause,
+            transaction
+        });
     }
 
     async getDetailedProduct(whereClause) {
@@ -135,6 +153,14 @@ class ProductRepository {
             order: [['createdAt', 'DESC']],
             include: [{ model: Category, as: 'category' }]
         });
+    }
+
+    async count(whereClause = {}) {
+        return await Product.count({ where: whereClause });
+    }
+
+    async sum(field, whereClause = {}) {
+        return await Product.sum(field, { where: whereClause });
     }
 }
 

@@ -15,6 +15,10 @@ const OrderShippingAddress = sequelize.define('orderShippingAddress', {
             key: 'id'
         }
     },
+    full_name: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     address_line1: {
         type: DataTypes.STRING,
         allowNull: false

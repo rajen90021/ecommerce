@@ -1,7 +1,7 @@
 class ApiConstants {
   // Base URL
-//   static const String baseUrl = 'http://10.0.2.2:3000/api/';
-  static const String baseUrl = 'https://ecommerce-2-gcse.onrender.com/api/';
+  static const String baseUrl = 'http://10.0.2.2:3000/api/';
+  // static const String baseUrl = 'https://ecommerce-2-gcse.onrender.com/api/';
   
   // Authentication Endpoints
   static const String loginPhone = 'users/login-phone';
@@ -15,7 +15,19 @@ class ApiConstants {
   static const String productsTrending = 'products/trending';
   static const String productsNewArrivals = 'products/new-arrivals';
   static const String productsBestSellers = 'products/best-sellers';
-  static const String productsRecommended = 'products/recommended';
-  static const String productsSearch = 'products/search';
   static const String productsFilters = 'products/filters';
+  
+  // User Endpoints
+  static const String userProfile = 'users/user-profile';
+  static const String userAddresses = 'users/addresses';
+  
+  // Order Endpoints
+  static const String ordersOrder = 'orders';
+  static const String ordersCreate = 'orders/create';
+  static const String ordersMyOrders = 'orders/my-orders';
+  
+  // Offer / Coupon Endpoints
+  static const String offers = 'offers';
+  static const String validateCoupon = 'offers/validate';
+  static const String activeLocations = 'locations/active';
 }

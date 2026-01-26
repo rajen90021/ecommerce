@@ -7,9 +7,10 @@ const Offer = sequelize.define('offer', {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4
     },
-    offer_name: {
+    code: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
     description: {
         type: DataTypes.TEXT,

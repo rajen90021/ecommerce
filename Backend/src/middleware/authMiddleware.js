@@ -1,17 +1,18 @@
 import jwt from 'jsonwebtoken';
+import config from '../config/config.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const JWT_SECRET = config.jwt.secret;
 
 
- export const authMiddleware = (req, res, next) => {
+export const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-       const error = new Error('Authorization header is missing or malformed');
-       error.statusCode = 401;
-         error.name = 'UnauthorizedError';
-         error.message = 'Please provide a valid Bearer token in the Authorization header.';
-       return next(error);
+        const error = new Error('Authorization header is missing or malformed');
+        error.statusCode = 401;
+        error.name = 'UnauthorizedError';
+        error.message = 'Please provide a valid Bearer token in the Authorization header.';
+        return next(error);
     }
 
     const token = authHeader.split(' ')[1];
@@ -29,8 +30,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
         next();
     } catch (err) {
         const error = new Error('Invalid or expired token');
-        error.statusCode = 403;
-        error.name = 'ForbiddenError';
+        error.statusCode = 401;
+        error.name = 'UnauthorizedError';
         return next(error);
     }
 };

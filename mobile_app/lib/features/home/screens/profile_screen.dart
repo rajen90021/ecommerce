@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/theme/app_colors.dart';
+import 'my_orders_screen.dart';
+import 'shipping_addresses_screen.dart';
+import 'payment_methods_screen.dart';
+import 'notifications_screen.dart';
+import 'privacy_security_screen.dart';
+import 'help_center_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -132,20 +138,52 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          _menuItem(Icons.shopping_bag_outlined, 'My Orders', 'Track and manage your orders'),
-          _menuItem(Icons.location_on_outlined, 'Shipping Address', 'Manage your delivery addresses'),
-          _menuItem(Icons.payment_rounded, 'Payment Methods', 'Credit cards, UPI, Wallets'),
-          _menuItem(Icons.notifications_none_rounded, 'Notifications', 'Order updates and offers'),
-          _menuItem(Icons.security_rounded, 'Privacy & Security', 'Change password, account data'),
-          _menuItem(Icons.headset_mic_outlined, 'Help Center', 'FAQs and customer support'),
+          _menuItem(
+            Icons.shopping_bag_outlined, 
+            'My Orders', 
+            'Track and manage your orders',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyOrdersScreen())),
+          ),
+          _menuItem(
+            Icons.location_on_outlined, 
+            'Shipping Address', 
+            'Manage your delivery addresses',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShippingAddressesScreen())),
+          ),
+          _menuItem(
+            Icons.notifications_none_rounded, 
+            'Notifications', 
+            'Order updates and offers',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+          ),
+          _menuItem(
+            Icons.security_rounded, 
+            'Privacy & Security', 
+            'Change password, account data',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen())),
+          ),
+          _menuItem(
+            Icons.headset_mic_outlined, 
+            'Help Center', 
+            'FAQs and customer support',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
+          ),
           const SizedBox(height: 20),
-          _menuItem(Icons.logout_rounded, 'Logout', 'Sign out of your account', color: Colors.redAccent),
+          _menuItem(
+            Icons.logout_rounded, 
+            'Logout', 
+            'Sign out of your account', 
+            color: Colors.redAccent,
+            onTap: () {
+              // Handle logout logic
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _menuItem(IconData icon, String title, String subtitle, {Color? color}) {
+  Widget _menuItem(IconData icon, String title, String subtitle, {Color? color, VoidCallback? onTap}) {
     return FadeInRight(
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -168,7 +206,7 @@ class ProfileScreen extends StatelessWidget {
           title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color ?? AppColors.accent)),
           subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
           trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-          onTap: () {},
+          onTap: onTap,
         ),
       ),
     );

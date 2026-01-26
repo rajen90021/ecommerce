@@ -43,12 +43,12 @@ const Order = sequelize.define('order', {
         allowNull: false
     },
     status: {
-        type: DataTypes.ENUM('placed', 'processing', 'shipping', 'delivered'),
+        type: DataTypes.ENUM('placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'),
         allowNull: false,
         defaultValue: 'placed'
     },
     payment_status: {
-        type: DataTypes.ENUM('paid', 'not_paid'),
+        type: DataTypes.ENUM('paid', 'not_paid', 'refunded'),
         allowNull: false,
         defaultValue: 'not_paid'
     },
@@ -58,6 +58,27 @@ const Order = sequelize.define('order', {
     },
     payment_transaction_id: {
         type: DataTypes.STRING,
+        allowNull: true
+    },
+    // Delivery Tracking Fields
+    tracking_number: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    delivery_partner: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    estimated_delivery_date: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    actual_delivery_date: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    delivery_notes: {
+        type: DataTypes.TEXT,
         allowNull: true
     },
     createdAt: {

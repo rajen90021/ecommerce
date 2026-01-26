@@ -4,6 +4,8 @@ import 'package:animate_do/animate_do.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/cart_provider.dart';
 import '../../../core/providers/address_provider.dart';
+import '../../../core/providers/order_provider.dart';
+import '../../../core/widgets/top_toast.dart';
 import 'order_success_screen.dart';
 
 class PaymentSelectionScreen extends StatefulWidget {
@@ -14,7 +16,68 @@ class PaymentSelectionScreen extends StatefulWidget {
 }
 
 class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
-  String _selectedMethod = 'COD'; // Default to COD
+  String _selectedMethod = 'cod'; // Default to COD (mapping to backend enum)
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateShipping();
+    });
+  }
+
+  void _updateShipping() {
+    final cart = context.read<CartProvider>();
+    final addressProv = context.read<AddressProvider>();
+    if (addressProv.selectedAddress != null) {
+      cart.updateShippingFromAddress(addressProv.selectedAddress!.city);
+    }
+  }
+
+  Future<void> _handlePlaceOrder(CartProvider cart) async {
+    final addressProvider = context.read<AddressProvider>();
+    final orderProvider = context.read<OrderProvider>();
+
+    if (addressProvider.selectedAddress == null) {
+      TopToast.show(context, 'Please select a delivery address', isError: true);
+      return;
+    }
+
+    setState(() => _isProcessing = true);
+
+    try {
+      // Map cart items to backend format
+      final List<Map<String, dynamic>> items = cart.items.map((item) => {
+        'product_id': item.product.id,
+        'product_variant_id': null, // We'll add variant support once models are updated
+        'quantity': item.quantity,
+      }).toList();
+
+      await orderProvider.placeOrder(
+        items: items,
+        addressId: addressProvider.selectedAddress!.id!,
+        couponCode: cart.appliedCoupon,
+        paymentType: _selectedMethod,
+      );
+
+      // Success
+      if (mounted) {
+        cart.clearCart();
+        Navigator.pushAndRemoveUntil(
+          context, 
+          MaterialPageRoute(builder: (_) => const OrderSuccessScreen()),
+          (route) => route.isFirst,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        TopToast.show(context, e.toString().replaceAll('Exception: ', ''), isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,18 +95,35 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.accent, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Consumer<CartProvider>(
         builder: (context, cart, child) {
           return Column(
             children: [
+              if (_isProcessing)
+                const LinearProgressIndicator(backgroundColor: Colors.white, color: AppColors.primary, minHeight: 2),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(24),
                   children: [
-                    _buildPaymentOption('COD', 'Cash on Delivery (Cash/UPI)', Icons.money_rounded),
-                    _buildPaymentOption('CARD', 'Credit / Debit Card', Icons.credit_card_rounded, enabled: false),
-                    _buildPaymentOption('UPI', 'Google Pay / PhonePe', Icons.account_balance_wallet_outlined, enabled: false),
+                    FadeInDown(
+                      duration: const Duration(milliseconds: 400),
+                      child: _buildPaymentOption('cod', 'Cash on Delivery (Cash/UPI)', Icons.money_rounded)
+                    ),
+                    FadeInDown(
+                      delay: const Duration(milliseconds: 100),
+                      duration: const Duration(milliseconds: 400),
+                      child: _buildPaymentOption('card', 'Credit / Debit Card', Icons.credit_card_rounded, enabled: false)
+                    ),
+                    FadeInDown(
+                      delay: const Duration(milliseconds: 200),
+                      duration: const Duration(milliseconds: 400),
+                      child: _buildPaymentOption('upi', 'Google Pay / PhonePe', Icons.account_balance_wallet_outlined, enabled: false)
+                    ),
                     
                     const SizedBox(height: 40),
                     const Text(
@@ -78,7 +158,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isSelected ? Colors.grey[50] : Colors.white,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: isSelected ? AppColors.primary : Colors.grey[200]!,
@@ -132,25 +212,15 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         width: double.infinity,
         height: 55,
         child: ElevatedButton(
-          onPressed: () {
-            // Place Order Logic
-            final address = Provider.of<AddressProvider>(context, listen: false).selectedAddress;
-            if (address != null) {
-              // Mark order as placed locally for now
-              cart.clearCart();
-              Navigator.pushAndRemoveUntil(
-                context, 
-                MaterialPageRoute(builder: (_) => const OrderSuccessScreen()),
-                (route) => route.isFirst,
-              );
-            }
-          },
+          onPressed: _isProcessing ? null : () => _handlePlaceOrder(cart),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          child: const Text('PAY & PLACE ORDER', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+          child: _isProcessing 
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : const Text('PAY & PLACE ORDER', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
         ),
       ),
     );

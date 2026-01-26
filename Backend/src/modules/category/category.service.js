@@ -7,7 +7,13 @@ import { uploadToCloudinary, deleteFromCloudinary, extractPublicIdFromUrl } from
  */
 class CategoryService {
     async createCategory(data, file) {
-        const { category_name, url_slug, parent_cat_id, status } = data;
+        const { category_name, description, parent_cat_id, status } = data;
+        let { url_slug } = data;
+
+        // Auto-generate slug if not provided
+        if (!url_slug || url_slug.trim() === '') {
+            url_slug = category_name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+        }
 
         const existingCategory = await categoryRepository.findBySlug(url_slug);
         if (existingCategory) {
@@ -40,6 +46,7 @@ class CategoryService {
         return await categoryRepository.create({
             category_name,
             url_slug,
+            description,
             parent_cat_id,
             status: status || 'active',
             image_url: imageUrl,
@@ -57,11 +64,21 @@ class CategoryService {
             search
         } = queryParams;
 
+        // Default to 'active' only if no specific status is requested.
+        let finalStatus = status;
+        if (status && status !== 'all') {
+            finalStatus = status;
+        } else if (!status) {
+            finalStatus = 'active';
+        } else if (status === 'all') {
+            finalStatus = undefined; // repository listCategories handles undefined as no status filter
+        }
+
         // Passing domain parameters to repository
         const result = await categoryRepository.listCategories({
             page: parseInt(page),
             limit: parseInt(limit),
-            status,
+            status: finalStatus,
             parent_cat_id,
             searchString: search
         });
@@ -99,13 +116,19 @@ class CategoryService {
     }
 
     async updateCategory(id, data, file) {
-        const { category_name, url_slug, parent_cat_id, status } = data;
+        const { category_name, description, parent_cat_id, status } = data;
+        let { url_slug } = data;
 
         const category = await categoryRepository.findById(id);
         if (!category) {
             const error = new Error('Category not found');
             error.statusCode = 404;
             throw error;
+        }
+
+        // Handle slug automation
+        if (!url_slug && category_name && category_name !== category.category_name) {
+            url_slug = category_name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
         }
 
         if (url_slug && url_slug !== category.url_slug) {
@@ -147,6 +170,7 @@ class CategoryService {
 
         category.category_name = category_name || category.category_name;
         category.url_slug = url_slug || category.url_slug;
+        category.description = description !== undefined ? description : category.description;
         category.parent_cat_id = parent_cat_id !== undefined ? parent_cat_id : category.parent_cat_id;
         category.status = status || category.status;
         category.image_url = newImageUrl;

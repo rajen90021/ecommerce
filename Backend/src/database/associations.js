@@ -30,6 +30,8 @@ import Wishlist from "../modules/wishlist/wishlist.model.js";
 
 // Shared Models
 import Offer from "../modules/offer/offer.model.js";
+import Notification from "../modules/notification/notification.model.js";
+import Location from "../modules/location/location.model.js";
 
 // ============================================
 // USER ASSOCIATIONS
@@ -199,6 +201,20 @@ Offer.belongsTo(Category, {
     as: 'category'
 });
 
+// ============================================
+// NOTIFICATION ASSOCIATIONS
+// ============================================
+
+Notification.belongsTo(user, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
+user.hasMany(Notification, {
+    foreignKey: 'user_id',
+    as: 'notifications'
+});
+
 export {
     user,
     role,
@@ -212,5 +228,7 @@ export {
     OrderShippingAddress,
     Address,
     Wishlist,
-    Offer
+    Offer,
+    Notification,
+    Location
 };
