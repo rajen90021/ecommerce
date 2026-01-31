@@ -23,11 +23,12 @@ const config = {
   env,
   port: getEnv('PORT', 6006),
   db: {
+    url: getEnv('DATABASE_URL', ''), // Prefer connection string (Standard for Render)
     host: getEnv('DB_HOST', ''),
     port: parseInt(getEnv('DB_PORT', '5432'), 10),
     username: getEnv('DB_USER', ''),
     password: getEnv('DB_PASSWORD', ''),
-    database: getEnv('DB_NAME', 'defaultdb'),
+    database: getEnv('DB_NAME', 'ecommerce_w6oi'),
     ssl: getEnv('DB_SSL', 'false') === 'true',
   },
   apiUrl: getEnv('API_URL', 'http://localhost:6006'),

@@ -6,29 +6,46 @@ import config from '../config/config.js';
  * Manages the connection pool to the database.
  */
 
-const sequelize = new Sequelize(
-    config.db.database,
-    config.db.username,
-    config.db.password,
-    {
-        host: config.db.host,
-        port: config.db.port,
+const sequelize = config.db.url
+    ? new Sequelize(config.db.url, {
         dialect: 'postgres',
         logging: false,
-        dialectOptions: config.db.ssl ? {
+        dialectOptions: {
             ssl: {
-                require: true, // Explicitly require SSL
-                rejectUnauthorized: false // Required for Render
+                require: true,
+                rejectUnauthorized: false
             }
-        } : {},
+        },
         pool: {
             max: 5,
             min: 0,
-            acquire: 60000, // Increased timeout
+            acquire: 60000,
             idle: 10000
         }
-    }
-);
+    })
+    : new Sequelize(
+        config.db.database,
+        config.db.username,
+        config.db.password,
+        {
+            host: config.db.host,
+            port: config.db.port,
+            dialect: 'postgres',
+            logging: false,
+            dialectOptions: config.db.ssl ? {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: false
+                }
+            } : {},
+            pool: {
+                max: 5,
+                min: 0,
+                acquire: 60000,
+                idle: 10000
+            }
+        }
+    );
 
 /**
  * Test database connection
