@@ -17,13 +17,14 @@ const sequelize = new Sequelize(
         logging: false,
         dialectOptions: config.db.ssl ? {
             ssl: {
-                rejectUnauthorized: false // Required for some hosted PostgreSQL like Aiven
+                require: true, // Explicitly require SSL
+                rejectUnauthorized: false // Required for Render
             }
         } : {},
         pool: {
             max: 5,
             min: 0,
-            acquire: 30000,
+            acquire: 60000, // Increased timeout
             idle: 10000
         }
     }
