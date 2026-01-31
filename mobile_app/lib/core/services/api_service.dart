@@ -127,7 +127,10 @@ class ApiService {
     } else if (response.statusCode == 404) {
       throw NotFoundException('Resource not found');
     } else if (response.statusCode >= 500) {
-      throw ServerException('Server error occurred');
+      final errorBody = response.body.isNotEmpty 
+          ? jsonDecode(response.body) 
+          : {'message': 'Server error occurred'};
+      throw ServerException(errorBody['message'] ?? 'Server error occurred');
     } else {
       final errorBody = response.body.isNotEmpty 
           ? jsonDecode(response.body) 

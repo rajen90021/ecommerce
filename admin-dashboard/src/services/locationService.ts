@@ -4,6 +4,7 @@ export interface Location {
   id: string;
   city_name: string;
   state: string;
+  pincode: string;
   is_active: boolean;
   delivery_charge: number;
   min_order_amount: number;

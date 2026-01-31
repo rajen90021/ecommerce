@@ -11,7 +11,8 @@ import { adminOrSuperAdminMiddleware } from '../user/user.middleware.js';
 
 const locationRoutes = express.Router();
 
-// Public route for mobile app
+// Public routes
+locationRoutes.get('/', getAllLocations);
 locationRoutes.get('/active', getActiveLocations);
 
 // Admin routes

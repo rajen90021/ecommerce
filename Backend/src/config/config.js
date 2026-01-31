@@ -21,16 +21,16 @@ const getEnv = (key, fallback) => process.env[key] || fallback;
 // Now build the config object
 const config = {
   env,
-  port: getEnv('PORT', 6000),
+  port: getEnv('PORT', 6006),
   db: {
     host: getEnv('DB_HOST', ''),
-    port: parseInt(getEnv('DB_PORT', '17360'), 10),
+    port: parseInt(getEnv('DB_PORT', '5432'), 10),
     username: getEnv('DB_USER', ''),
     password: getEnv('DB_PASSWORD', ''),
     database: getEnv('DB_NAME', 'defaultdb'),
-    ssl: getEnv('DB_SSL', 'true') === 'true',
+    ssl: getEnv('DB_SSL', 'false') === 'true',
   },
-  apiUrl: getEnv('API_URL', 'http://localhost:6000'),
+  apiUrl: getEnv('API_URL', 'http://localhost:6006'),
   jwt: {
     secret: getEnv('JWT_SECRET', 'your_jwt_production_secret_key'),
     expiration: getEnv('JWT_EXPIRATION', '1h'),

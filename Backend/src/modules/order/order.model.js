@@ -90,6 +90,18 @@ const Order = sequelize.define('order', {
         type: DataTypes.DATE,
         allowNull: true,
         field: 'updated_at'
+    },
+    final_amount: {
+        type: DataTypes.VIRTUAL,
+        get() { return this.net_amount; }
+    },
+    payment_method: {
+        type: DataTypes.VIRTUAL,
+        get() { return this.payment_type; }
+    },
+    order_status: {
+        type: DataTypes.VIRTUAL,
+        get() { return this.status; }
     }
 }, {
     timestamps: false,

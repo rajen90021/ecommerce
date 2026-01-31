@@ -33,6 +33,7 @@ import { validateUserProfile } from './user.validators.js';
 import { validateCreateShippingAddress, validateUpdateShippingAddress } from './address.validators.js';
 
 import { authMiddleware } from '../../middleware/authMiddleware.js';
+import { validate } from '../../middleware/validate.js';
 import { adminOrSuperAdminMiddleware } from './user.middleware.js';
 import { registerRateLimiter } from '../../middleware/rateLimiter.js';
 
@@ -69,8 +70,8 @@ userRoutes.get('/admin/all-users', authMiddleware, adminOrSuperAdminMiddleware, 
 
 // Address routes
 userRoutes.get('/addresses', authMiddleware, getUserAddresses);
-userRoutes.post('/addresses', authMiddleware, validateCreateShippingAddress, addAddress);
-userRoutes.put('/addresses/:id', authMiddleware, validateUpdateShippingAddress, updateAddress);
+userRoutes.post('/addresses', authMiddleware, validateCreateShippingAddress, validate, addAddress);
+userRoutes.put('/addresses/:id', authMiddleware, validateUpdateShippingAddress, validate, updateAddress);
 userRoutes.delete('/addresses/:id', authMiddleware, deleteAddress);
 userRoutes.put('/addresses/:id/set-default', authMiddleware, setDefaultAddress);
 

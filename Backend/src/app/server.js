@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-const PORT = config.port || 3000;
+const PORT = config.port || 6006;
 console.log(config.env)
 
 

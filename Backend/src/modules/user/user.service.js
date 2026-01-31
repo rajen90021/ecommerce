@@ -466,34 +466,65 @@ class UserService {
     }
 
     async addAddress(userId, data) {
-        const { is_default } = data;
+        const {
+            full_name,
+            phone,
+            address_line1,
+            address_line2,
+            city,
+            state,
+            postal_code,
+            country,
+            is_default
+        } = data;
 
-        return await sequelize.transaction(async (t) => {
-            if (is_default) {
-                // Unset other defaults
-                await Address.update(
-                    { is_default: false },
-                    { where: { user_id: userId }, transaction: t }
-                );
-            }
+        try {
+            return await sequelize.transaction(async (t) => {
+                if (is_default) {
+                    // Unset other defaults
+                    await Address.update(
+                        { is_default: false },
+                        { where: { user_id: userId }, transaction: t }
+                    );
+                }
 
-            const addressCount = await Address.count({ where: { user_id: userId } });
+                const addressCount = await Address.count({ where: { user_id: userId } });
 
-            const newAddress = await userRepository.createAddress({
-                id: uuidv4(),
-                user_id: userId,
-                ...data,
-                is_default: addressCount === 0 ? true : (is_default || false),
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }, t);
+                const newAddress = await userRepository.createAddress({
+                    id: uuidv4(),
+                    user_id: userId,
+                    full_name,
+                    phone,
+                    address_line1,
+                    address_line2,
+                    city,
+                    state,
+                    postal_code,
+                    country: country || 'India',
+                    is_default: addressCount === 0 ? true : (is_default || false),
+                }, t);
 
-            return newAddress;
-        });
+                return newAddress;
+            });
+        } catch (error) {
+            console.error('Error in UserService.addAddress:', error);
+            throw error;
+        }
     }
 
     async updateAddress(userId, addressId, data) {
-        const { is_default } = data;
+        const {
+            full_name,
+            phone,
+            address_line1,
+            address_line2,
+            city,
+            state,
+            postal_code,
+            country,
+            is_default
+        } = data;
+
         const address = await Address.findOne({ where: { id: addressId, user_id: userId } });
 
         if (!address) {
@@ -502,22 +533,34 @@ class UserService {
             throw error;
         }
 
-        return await sequelize.transaction(async (t) => {
-            if (is_default) {
-                // Unset other defaults
-                await Address.update(
-                    { is_default: false },
-                    { where: { user_id: userId }, transaction: t }
-                );
-            }
+        try {
+            return await sequelize.transaction(async (t) => {
+                if (is_default) {
+                    // Unset other defaults
+                    await Address.update(
+                        { is_default: false },
+                        { where: { user_id: userId }, transaction: t }
+                    );
+                }
 
-            await address.update({
-                ...data,
-                updatedAt: new Date()
-            }, { transaction: t });
+                await address.update({
+                    full_name,
+                    phone,
+                    address_line1,
+                    address_line2,
+                    city,
+                    state,
+                    postal_code,
+                    country,
+                    is_default: is_default || address.is_default
+                }, { transaction: t });
 
-            return address;
-        });
+                return address;
+            });
+        } catch (error) {
+            console.error('Error in UserService.updateAddress:', error);
+            throw error;
+        }
     }
 
     async deleteAddress(userId, addressId) {

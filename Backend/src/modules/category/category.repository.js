@@ -88,7 +88,7 @@ class CategoryRepository {
         if (status) where.status = status;
         if (parent_cat_id) where.parent_cat_id = parent_cat_id;
         if (searchString) {
-            where.category_name = { [Op.like]: `%${searchString}%` };
+            where.category_name = { [Op.iLike]: `%${searchString}%` };
         }
 
         return await Category.findAndCountAll({

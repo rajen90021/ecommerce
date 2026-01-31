@@ -78,6 +78,12 @@ const Locations: React.FC = () => {
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
+      title: 'Pincode',
+      dataIndex: 'pincode',
+      key: 'pincode',
+      render: (text: string) => <Tag color="orange">{text}</Tag>,
+    },
+    {
       title: 'Delivery Charge',
       dataIndex: 'delivery_charge',
       key: 'delivery_charge',
@@ -200,6 +206,14 @@ const Locations: React.FC = () => {
             rules={[{ required: true, message: 'Please input state!' }]}
           >
             <Input placeholder="West Bengal" style={{ borderRadius: 10, padding: '10px 15px' }} />
+          </Form.Item>
+
+          <Form.Item
+            name="pincode"
+            label={<span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Pincode</span>}
+            rules={[{ required: true, message: 'Please input pincode!' }]}
+          >
+            <Input placeholder="e.g. 734301" style={{ borderRadius: 10, padding: '10px 15px' }} />
           </Form.Item>
 
           <div className="grid grid-cols-2 gap-4">

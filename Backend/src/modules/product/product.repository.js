@@ -56,8 +56,8 @@ class ProductRepository {
         if (category_id) where.category_id = category_id;
         if (searchString) {
             where[Op.or] = [
-                { product_name: { [Op.like]: `%${searchString}%` } },
-                { description: { [Op.like]: `%${searchString}%` } }
+                { product_name: { [Op.iLike]: `%${searchString}%` } },
+                { description: { [Op.iLike]: `%${searchString}%` } }
             ];
         }
         if (minPrice || maxPrice) {

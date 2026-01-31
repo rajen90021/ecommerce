@@ -28,7 +28,7 @@ class DashboardService {
                 status: { [Op.ne]: 'cancelled' }
             },
             attributes: [
-                [sequelize.fn('date_format', sequelize.col('created_at'), '%Y-%m'), 'month'],
+                [sequelize.fn('to_char', sequelize.col('created_at'), 'YYYY-MM'), 'month'],
                 [sequelize.fn('SUM', sequelize.col('net_amount')), 'revenue'],
                 [sequelize.fn('COUNT', sequelize.col('id')), 'orders']
             ],

@@ -12,9 +12,13 @@ class CategoryService {
   /// Get all categories
   Future<List<CategoryModel>> getAllCategories({
     bool includeInactive = false,
+    String? search,
+    String? parentCatId,
   }) async {
     final queryParams = <String, dynamic>{};
     if (includeInactive) queryParams['includeInactive'] = true;
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+    if (parentCatId != null) queryParams['parent_cat_id'] = parentCatId;
 
     final response = await _apiService.get(
       ApiConstants.categories,

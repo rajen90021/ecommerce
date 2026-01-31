@@ -13,11 +13,11 @@ const sequelize = new Sequelize(
     {
         host: config.db.host,
         port: config.db.port,
-        dialect: 'mysql',
+        dialect: 'postgres',
         logging: false,
         dialectOptions: config.db.ssl ? {
             ssl: {
-                rejectUnauthorized: false // Required for some hosted MySQL like Aiven
+                rejectUnauthorized: false // Required for some hosted PostgreSQL like Aiven
             }
         } : {},
         pool: {

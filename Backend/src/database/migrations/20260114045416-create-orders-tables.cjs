@@ -64,6 +64,26 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
+      tracking_number: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      delivery_partner: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      estimated_delivery_date: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      actual_delivery_date: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      delivery_notes: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: true
@@ -164,6 +184,20 @@ module.exports = {
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
+      },
+      shipping_address_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'addresses',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      full_name: {
+        type: Sequelize.STRING,
+        allowNull: true
       },
       address_line1: {
         type: Sequelize.STRING,

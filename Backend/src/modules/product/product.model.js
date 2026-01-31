@@ -98,6 +98,12 @@ const Product = sequelize.define('product', {
         type: DataTypes.DATE,
         allowNull: true,
         field: 'updated_at'
+    },
+    is_active: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.status === 'active';
+        }
     }
 }, {
     timestamps: false,

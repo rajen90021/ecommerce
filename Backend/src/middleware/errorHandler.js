@@ -7,9 +7,15 @@ export const errorHandler = (err, req, res, next) => {
   let message = err.message || 'An unexpected error occurred';
 
   // Handle Sequelize validation errors
-  if (err.name === 'SequelizeValidationError') {
+  if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
     statusCode = 400;
     message = err.errors.map(e => e.message.replace(/^Validation error:\s*/, '')).join(', ');
+  } else if (err.name === 'SequelizeForeignKeyConstraintError') {
+    statusCode = 400;
+    message = 'Invalid reference: The associated record does not exist.';
+  } else if (err.name === 'SequelizeDatabaseError') {
+    statusCode = 400;
+    message = 'Database error: ' + err.message;
   }
 
   const response = {

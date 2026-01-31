@@ -19,6 +19,10 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
+      full_name: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
       address_line1: {
         type: Sequelize.STRING,
         allowNull: false
@@ -114,9 +118,10 @@ module.exports = {
         primaryKey: true,
         defaultValue: Sequelize.UUIDV4
       },
-      offer_name: {
+      code: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        unique: true
       },
       description: {
         type: Sequelize.TEXT,
@@ -160,6 +165,26 @@ module.exports = {
         type: Sequelize.ENUM('active', 'inactive'),
         allowNull: false,
         defaultValue: 'active'
+      },
+      product_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'products',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      category_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'categories',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
       created_at: {
         type: Sequelize.DATE,

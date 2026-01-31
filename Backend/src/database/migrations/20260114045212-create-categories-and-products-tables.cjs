@@ -18,6 +18,10 @@ module.exports = {
         allowNull: false,
         unique: true
       },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
       parent_cat_id: {
         type: Sequelize.UUID,
         allowNull: true,
@@ -94,6 +98,48 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
+      brand: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      tags: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      is_featured: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      is_trending: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      is_new_arrival: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      discount_percentage: {
+        type: Sequelize.DECIMAL(5, 2),
+        allowNull: true,
+        defaultValue: 0
+      },
+      original_price: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: true
+      },
+      average_rating: {
+        type: Sequelize.DECIMAL(3, 2),
+        allowNull: true,
+        defaultValue: 0
+      },
+      total_reviews: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: true
@@ -110,3 +156,5 @@ module.exports = {
     await queryInterface.dropTable('categories');
   }
 };
+
+

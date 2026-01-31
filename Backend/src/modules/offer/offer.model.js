@@ -55,6 +55,22 @@ const Offer = sequelize.define('offer', {
         allowNull: false,
         defaultValue: 'active'
     },
+    product_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'products',
+            key: 'id'
+        }
+    },
+    category_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'categories',
+            key: 'id'
+        }
+    },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: true,

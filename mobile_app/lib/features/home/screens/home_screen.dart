@@ -337,78 +337,112 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FadeInLeft(
-          child: Text(
-            'Welcome, ${widget.userName ?? 'Guest'}',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'WELCOME, ${widget.userName?.toUpperCase() ?? 'GUEST'}',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         FadeInLeft(
           delay: const Duration(milliseconds: 100),
-          child: const Text(
-            'Discover Your Style',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              color: AppColors.accent,
-              letterSpacing: -0.5,
+          child: RichText(
+            text: const TextSpan(
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                color: AppColors.accent,
+                letterSpacing: -1,
+                height: 1.1,
+              ),
+              children: [
+                TextSpan(text: 'Explore Your\n'),
+                TextSpan(
+                  text: 'KalimGo',
+                  style: TextStyle(color: AppColors.primary),
+                ),
+              ],
             ),
           ),
         ),
+      
+        
       ],
     );
   }
 
   Widget _buildSearchBar() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FadeInUp(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+    return FadeInUp(
+      delay: const Duration(milliseconds: 200),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.accent.withOpacity(0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-            child: TextField(
-              controller: _searchController,
-              onSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  _navigateToSearch(value);
-                  setState(() => _suggestions = []);
-                }
-              },
-              decoration: InputDecoration(
-                hintText: 'Search collections, trends...',
-                hintStyle: TextStyle(color: Colors.grey[600], fontSize: 15),
-                prefixIcon: Icon(Icons.search_rounded, color: Colors.grey[600]),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 20),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _suggestions = []);
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 15),
-              ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              _navigateToSearch(value);
+              setState(() => _suggestions = []);
+            }
+          },
+          style: const TextStyle(fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            hintText: 'Search collections, trends...',
+            hintStyle: TextStyle(
+              color: AppColors.textSecondary.withOpacity(0.5),
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
             ),
+            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 24),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _suggestions = []);
+                    },
+                  )
+                : Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
+                  ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 18),
           ),
         ),
-      ],
+      ),
     );
   }
 

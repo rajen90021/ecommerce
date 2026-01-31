@@ -60,10 +60,10 @@ class ProductService {
         // Search functionality (case-insensitive, partial match)
         if (search) {
             whereClause[Op.or] = [
-                { product_name: { [Op.like]: `%${search}%` } },
-                { description: { [Op.like]: `%${search}%` } },
-                { tags: { [Op.like]: `%${search}%` } },
-                { brand: { [Op.like]: `%${search}%` } }
+                { product_name: { [Op.iLike]: `%${search}%` } },
+                { description: { [Op.iLike]: `%${search}%` } },
+                { tags: { [Op.iLike]: `%${search}%` } },
+                { brand: { [Op.iLike]: `%${search}%` } }
             ];
         }
 
@@ -86,7 +86,7 @@ class ProductService {
 
         // Tags filtering
         if (tags) {
-            whereClause.tags = { [Op.like]: `%${tags}%` };
+            whereClause.tags = { [Op.iLike]: `%${tags}%` };
         }
 
         // Featured/Trending/New Arrival filters
@@ -159,6 +159,7 @@ class ProductService {
             if (productJson.variants) {
                 productJson.variants = productJson.variants.map(v => ({
                     ...v,
+                    price: parseFloat(productJson.price) + parseFloat(v.price_adjustment || 0),
                     size: v.variant_name === 'Size' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[0] : v.variant_value) : null,
                     color: v.variant_name === 'Color' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[1] : v.variant_value) : null
                 }));
@@ -362,7 +363,7 @@ class ProductService {
         const result = await productRepository.findAndCountAll({
             where: whereClause,
             limit: parseInt(limit),
-            order: [[sequelize.literal('RAND()')]],
+            order: [[sequelize.literal('RANDOM()')]],
             include: [
                 { model: Category, as: 'category', where: { status: 'active' }, required: true },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
@@ -404,7 +405,7 @@ class ProductService {
                 }
             },
             limit: parseInt(limit),
-            order: [[sequelize.literal('RAND()')]],
+            order: [[sequelize.literal('RANDOM()')]],
             include: [
                 { model: Category, as: 'category', where: { status: 'active' }, required: true },
                 { model: ProductImage, as: 'images', where: { status: 'active' }, required: false }
@@ -445,10 +446,10 @@ class ProductService {
         let whereClause = {
             status: 'active',
             [Op.or]: [
-                { product_name: { [Op.like]: `%${searchTerm}%` } },
-                { description: { [Op.like]: `%${searchTerm}%` } },
-                { tags: { [Op.like]: `%${searchTerm}%` } },
-                { brand: { [Op.like]: `%${searchTerm}%` } }
+                { product_name: { [Op.iLike]: `%${searchTerm}%` } },
+                { description: { [Op.iLike]: `%${searchTerm}%` } },
+                { tags: { [Op.iLike]: `%${searchTerm}%` } },
+                { brand: { [Op.iLike]: `%${searchTerm}%` } }
             ]
         };
 
@@ -479,7 +480,7 @@ class ProductService {
         if (sortBy === 'relevance') {
             // Prioritize exact matches in product name
             orderClause = [
-                [sequelize.literal(`CASE WHEN product_name LIKE '${searchTerm}%' THEN 1 WHEN product_name LIKE '%${searchTerm}%' THEN 2 ELSE 3 END`), 'ASC'],
+                [sequelize.literal(`CASE WHEN product_name ILIKE '${searchTerm}%' THEN 1 WHEN product_name ILIKE '%${searchTerm}%' THEN 2 ELSE 3 END`), 'ASC'],
                 ['average_rating', 'DESC']
             ];
         } else {
@@ -535,6 +536,7 @@ class ProductService {
         if (productJson.variants) {
             productJson.variants = productJson.variants.map(v => ({
                 ...v,
+                price: parseFloat(productJson.price) + parseFloat(v.price_adjustment || 0),
                 size: v.variant_name === 'Size' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[0] : v.variant_value) : null,
                 color: v.variant_name === 'Color' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[1] : v.variant_value) : null
             }));
@@ -559,6 +561,7 @@ class ProductService {
         if (productJson.variants) {
             productJson.variants = productJson.variants.map(v => ({
                 ...v,
+                price: parseFloat(productJson.price) + parseFloat(v.price_adjustment || 0),
                 size: v.variant_name === 'Size' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[0] : v.variant_value) : null,
                 color: v.variant_name === 'Color' || v.variant_name === 'Size-Color' ? (v.variant_name === 'Size-Color' ? v.variant_value.split('-')[1] : v.variant_value) : null
             }));
@@ -750,11 +753,15 @@ class ProductService {
                         value = variant.color;
                     }
 
+                    const basePrice = parseFloat(price);
+                    const variantPrice = variant.price ? parseFloat(variant.price) : basePrice;
+                    const priceAdjustment = variant.price_adjustment !== undefined ? parseFloat(variant.price_adjustment) : (variantPrice - basePrice);
+
                     await productRepository.addVariant({
                         product_id: newProduct.id,
                         variant_name: name,
                         variant_value: value,
-                        price_adjustment: parseFloat(variant.price_adjustment || 0),
+                        price_adjustment: priceAdjustment,
                         stock_quantity: parseInt(variant.stock_quantity || 0),
                         status: variant.is_active === false ? 'inactive' : 'active',
                         createdAt: new Date(),
@@ -913,11 +920,15 @@ class ProductService {
                         value = variant.color;
                     }
 
+                    const basePrice = price ? parseFloat(price) : parseFloat(product.price);
+                    const variantPrice = variant.price ? parseFloat(variant.price) : (basePrice + parseFloat(variant.price_adjustment || 0));
+                    const priceAdjustment = variantPrice - basePrice;
+
                     await productRepository.addVariant({
                         product_id: id,
                         variant_name: name,
                         variant_value: value,
-                        price_adjustment: parseFloat(variant.price_adjustment || 0),
+                        price_adjustment: priceAdjustment,
                         stock_quantity: parseInt(variant.stock_quantity || 0),
                         status: variant.is_active === false ? 'inactive' : 'active',
                         createdAt: new Date(),

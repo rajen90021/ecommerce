@@ -9,27 +9,33 @@ module.exports = {
                 primaryKey: true,
                 defaultValue: Sequelize.UUIDV4
             },
-            city_name: {
+            state: {
+                type: Sequelize.STRING,
+                allowNull: false
+            },
+            city: {
+                type: Sequelize.STRING,
+                allowNull: false
+            },
+            pincode: {
                 type: Sequelize.STRING,
                 allowNull: false,
                 unique: true
             },
-            state: {
-                type: Sequelize.STRING,
-                allowNull: true,
-                defaultValue: 'West Bengal'
-            },
-            is_active: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: true
-            },
             delivery_charge: {
                 type: Sequelize.DECIMAL(10, 2),
+                allowNull: false,
                 defaultValue: 50.00
             },
             min_order_amount: {
                 type: Sequelize.DECIMAL(10, 2),
+                allowNull: false,
                 defaultValue: 0.00
+            },
+            is_available: {
+                type: Sequelize.BOOLEAN,
+                allowNull: false,
+                defaultValue: true
             },
             created_at: {
                 type: Sequelize.DATE,
