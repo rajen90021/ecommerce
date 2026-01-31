@@ -20,7 +20,8 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.27.1'
+          # Removing fixed version to automatically use the latest stable which supports Dart ^3.9.2
+
 
       - name: Get dependencies
         working-directory: mobile_app
