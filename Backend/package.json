@@ -2,11 +2,11 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "backend ecommerce",
-  "main": "server.js",
+  "main": "src/app/server.js",
   "type": "module",
   "scripts": {
     "dev": "cross-env NODE_ENV=development  nodemon src/app/server.js",
-    "start": "cross-env NODE_ENV=production nodemon src/app/server.js",
+    "start": "cross-env NODE_ENV=production node src/app/server.js",
     "test": "cross-env NODE_ENV=test nodemon src/app/server.js",
     "migrate": "npx sequelize-cli db:migrate",
     "migrate:undo": "npx sequelize-cli db:migrate:undo",
