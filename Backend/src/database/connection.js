@@ -6,23 +6,25 @@ import config from '../config/config.js';
  * Manages the connection pool to the database.
  */
 
-const sequelize = config.db.url
-    ? new Sequelize(config.db.url, {
-        dialect: 'postgres',
-        logging: false,
-        dialectOptions: {
-            ssl: {
-                require: true,
-                rejectUnauthorized: false
-            }
-        },
-        pool: {
-            max: 5,
-            min: 0,
-            acquire: 60000,
-            idle: 10000
+const connectionOptions = {
+    dialect: 'postgres',
+    logging: false,
+    dialectOptions: {
+        ssl: {
+            require: true,
+            rejectUnauthorized: false
         }
-    })
+    },
+    pool: {
+        max: 10,
+        min: 2,
+        acquire: 60000,
+        idle: 10000
+    }
+};
+
+const sequelize = config.db.url
+    ? new Sequelize(config.db.url, connectionOptions)
     : new Sequelize(
         config.db.database,
         config.db.username,
@@ -30,20 +32,7 @@ const sequelize = config.db.url
         {
             host: config.db.host,
             port: config.db.port,
-            dialect: 'postgres',
-            logging: false,
-            dialectOptions: config.db.ssl ? {
-                ssl: {
-                    require: true,
-                    rejectUnauthorized: false
-                }
-            } : {},
-            pool: {
-                max: 5,
-                min: 0,
-                acquire: 60000,
-                idle: 10000
-            }
+            ...connectionOptions
         }
     );
 
@@ -55,18 +44,14 @@ export const connectDB = async () => {
         await sequelize.authenticate();
         console.log('✅ Database connection established successfully.');
 
-        // In production, you MUST use migrations. 
-        // In dev, you can use sync if you want, but migrations are preferred.
         if (config.env === 'development') {
-            // Use basic sync without alter to avoid "too many keys" error
             await sequelize.sync({ force: false });
             console.log(`ℹ️  DB Synced successfully for ${config.env} mode.`);
         }
-        // For production, rely on migrations only (no sync)
-        console.log('ℹ️  Using Sequelize Migrations for schema management.');
     } catch (error) {
         console.error('❌ Unable to connect to the database:', error);
-        process.exit(1);
+        // Don't exit process in dev if DB is down, but in prod we should
+        if (config.env === 'production') process.exit(1);
     }
 };
 
