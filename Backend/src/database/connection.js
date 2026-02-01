@@ -9,12 +9,12 @@ import config from '../config/config.js';
 const connectionOptions = {
     dialect: 'postgres',
     logging: false,
-    dialectOptions: {
+    dialectOptions: config.db.ssl ? {
         ssl: {
             require: true,
             rejectUnauthorized: false
         }
-    },
+    } : {},
     pool: {
         max: 10,
         min: 2,

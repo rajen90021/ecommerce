@@ -100,7 +100,35 @@ class CartProvider extends ChangeNotifier {
 
   double get subTotal => _items.fold(0.0, (sum, item) => sum + item.totalActualPrice);
   
-  double get totalAmount => (subTotal + shippingFee) - _couponDiscount;
+  bool _useCoins = false;
+  int _coinBalance = 0;
+  
+  bool get useCoins => _useCoins;
+  int get coinBalance => _coinBalance;
+
+  void setCoinBalance(int coins) {
+      _coinBalance = coins;
+      notifyListeners();
+  }
+
+  void toggleUseCoins(bool value) {
+      if (value && _coinBalance < 50) return; // Basic validation
+      _useCoins = value;
+      notifyListeners();
+  }
+
+  double get coinDiscountAmount {
+      if (!_useCoins || _coinBalance < 50) return 0.0;
+      double discount = _coinBalance.toDouble();
+      // Assume 1 Coin = 1 Rupee. Max discount cannot exceed subTotal (before or after coupon?)
+      // Usually after coupon, but for simplicity let's say it applies to total payable.
+      // Logic: Max redeemable is remaining amount after coupon.
+      double remaining = (subTotal + shippingFee) - _couponDiscount;
+      if (discount > remaining) return remaining;
+      return discount;
+  }
+  
+  double get totalAmount => (subTotal + shippingFee) - _couponDiscount - coinDiscountAmount;
 
   void addToCart(ProductModel product, {String? size, String? color}) {
     final existingIndex = _items.indexWhere(
@@ -232,5 +260,29 @@ class CartProvider extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  Future<void> fetchUserCoins() async {
+      try {
+          final prefs = await SharedPreferences.getInstance();
+          String? token = prefs.getString('auth_token');
+          if (token == null) return;
+          
+          // We can use ApiService or direct http. optimizing for time, using ApiService if available or direct http
+          // Actually, let's just reuse the logic from ReferScreen or clean it up.
+          // Better: We already have 'user_data' in prefs from Profile/Login. 
+          // Let's load from there first for speed, then background refresh.
+          
+          String? userDataStr = prefs.getString('user_data');
+          if (userDataStr != null) {
+              final user = json.decode(userDataStr);
+              _coinBalance = user['coins'] ?? 0;
+              notifyListeners();
+          }
+          
+          // TODO: Implement background refresh if needed, but local data should be kept in sync by Profile/Login
+      } catch (e) {
+          debugPrint("Error fetching coins: $e");
+      }
   }
 }

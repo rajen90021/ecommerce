@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../../core/constants/assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/screens/phone_auth_screen.dart';
@@ -12,11 +13,52 @@ import '../screens/help_center_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/privacy_security_screen.dart';
 
-class HomeDrawer extends StatelessWidget {
+class HomeDrawer extends StatefulWidget {
   final String? userName;
   final Function(int)? onPageChange;
   final int? currentIndex;
   const HomeDrawer({super.key, this.userName, this.onPageChange, this.currentIndex});
+
+  @override
+  State<HomeDrawer> createState() => _HomeDrawerState();
+}
+
+class _HomeDrawerState extends State<HomeDrawer> {
+  String? _localUserName;
+
+  @override
+  void initState() {
+    super.initState();
+    _localUserName = widget.userName;
+    _loadUserData();
+  }
+
+  @override
+  void didUpdateWidget(HomeDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.userName != oldWidget.userName) {
+      setState(() {
+        _localUserName = widget.userName;
+      });
+    }
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance(); // Import needed if not present
+      final dataString = prefs.getString('user_data');
+      if (dataString != null) {
+          final data = jsonDecode(dataString);
+          if (data['name'] != null && mounted) {
+              setState(() {
+                  _localUserName = data['name'];
+              });
+          }
+      }
+    } catch (e) {
+      debugPrint("Drawer load error: $e");
+    }
+  }
 
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -61,7 +103,7 @@ class HomeDrawer extends StatelessWidget {
                 children: [
                    const SizedBox(height: 20),
                   _buildSectionLabel('SHOP'),
-                  _drawerItem(Icons.category_rounded, "Categories", _onItemTap(context, 1), currentIndex == 1),
+                  _drawerItem(Icons.category_rounded, "Categories", _onItemTap(context, 1), widget.currentIndex == 1),
                   _drawerItem(
                     Icons.local_offer_rounded, 
                     "Top Offers", 
@@ -71,14 +113,14 @@ class HomeDrawer extends StatelessWidget {
                   
                   const SizedBox(height: 24),
                   _buildSectionLabel('MY ACCOUNT'),
-                  _drawerItem(Icons.person_rounded, "My Profile", _onItemTap(context, 3), currentIndex == 3),
+                  _drawerItem(Icons.person_rounded, "My Profile", _onItemTap(context, 3), widget.currentIndex == 3),
                   _drawerItem(
                     Icons.shopping_bag_rounded, 
                     "My Orders", 
                     () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const MyOrdersScreen())); }, 
                     false,
                   ),
-                  _drawerItem(Icons.favorite_rounded, "Wishlist", _onItemTap(context, 2), currentIndex == 2),
+                  _drawerItem(Icons.favorite_rounded, "Wishlist", _onItemTap(context, 2), widget.currentIndex == 2),
                   _drawerItem(
                     Icons.location_on_rounded, 
                     "Addresses", 
@@ -153,7 +195,7 @@ class HomeDrawer extends StatelessWidget {
                   style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
                 ),
                 Text(
-                  userName ?? "Guest User",
+                  _localUserName ?? "Guest User",
                   style: const TextStyle(
                     color: Colors.white, 
                     fontSize: 18, 
@@ -224,8 +266,8 @@ class HomeDrawer extends StatelessWidget {
   VoidCallback? _onItemTap(BuildContext context, int index) {
     return () {
       Navigator.pop(context);
-      if (onPageChange != null) {
-        onPageChange!(index);
+      if (widget.onPageChange != null) {
+        widget.onPageChange!(index);
       }
     };
   }

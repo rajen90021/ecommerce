@@ -48,14 +48,14 @@ export const loginUser = async (req, res, next) => {
 
 export const loginWithPhone = async (req, res, next) => {
     try {
-        const { phone, firebaseUid } = req.body;
+        const { phone, firebaseUid, referralCode } = req.body;
         if (!phone && !firebaseUid) {
             const err = new Error('Phone number or Firebase UID is required');
             err.statusCode = 422;
             return next(err);
         }
 
-        const { user, token } = await userService.loginWithPhone(phone, firebaseUid);
+        const { user, token } = await userService.loginWithPhone(phone, firebaseUid, referralCode);
 
         return res.status(200).json({
             success: true,

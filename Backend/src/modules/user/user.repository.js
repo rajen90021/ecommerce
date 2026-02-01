@@ -24,6 +24,10 @@ class UserRepository {
         return await User.findOne({ where: { email }, include });
     }
 
+    async findByReferralCode(code) {
+        return await User.findOne({ where: { referral_code: code } });
+    }
+
     async findByPhone(phone, includeRoles = false, includeAddresses = false) {
         const include = [];
         if (includeRoles) include.push({
@@ -62,8 +66,8 @@ class UserRepository {
         return await user.addRole(role, { transaction });
     }
 
-    async saveUser(user) {
-        return await user.save();
+    async saveUser(user, transaction = null) {
+        return await user.save({ transaction });
     }
 
     async findAddressesByUserId(userId) {

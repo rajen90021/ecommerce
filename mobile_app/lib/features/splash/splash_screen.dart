@@ -93,21 +93,34 @@ class _SplashScreenState extends State<SplashScreen> {
                     tag: 'app_logo',
                     child: Image.asset(
                       AppAssets.logo,
-                      width: 250,
+                      width: 300, // Increased size
                       fit: BoxFit.contain,
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
                 FadeInUp(
                   delay: const Duration(milliseconds: 500),
-                  child: const Text(
-                    'Peak Style. Delivered.',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1.2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'SHOP LOCAL, SUPPORT LOCAL',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

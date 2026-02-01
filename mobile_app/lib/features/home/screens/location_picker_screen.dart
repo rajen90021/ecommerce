@@ -247,7 +247,13 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
               const SizedBox(height: 16),
               _buildRefineField(_nameController, 'Receiver Name', Icons.person_outline),
               const SizedBox(height: 16),
-              _buildRefineField(_mobileController, 'Contact Number', Icons.phone_android_outlined, keyboardType: TextInputType.phone),
+              _buildRefineField(
+                _mobileController, 
+                'Contact Number (Registered)', 
+                Icons.lock_outline, 
+                keyboardType: TextInputType.phone,
+                readOnly: true,
+              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -269,15 +275,22 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     );
   }
 
-  Widget _buildRefineField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType}) {
+  Widget _buildRefineField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType, bool readOnly = false}) {
     return TextField(
       controller: controller,
+      readOnly: readOnly,
       keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+      style: TextStyle(
+        fontSize: 14, 
+        fontWeight: FontWeight.bold,
+        color: readOnly ? Colors.grey[600] : Colors.black,
+      ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.normal),
-        prefixIcon: Icon(icon, size: 20, color: Colors.black),
+        prefixIcon: Icon(icon, size: 20, color: readOnly ? Colors.grey : Colors.black),
+        filled: readOnly,
+        fillColor: readOnly ? Colors.grey[100] : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: Colors.grey[200]!)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: Colors.grey[200]!)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.black, width: 2)),

@@ -30,6 +30,7 @@ class OrderProvider extends ChangeNotifier {
     required List<Map<String, dynamic>> items,
     required String addressId,
     String? couponCode,
+    bool useCoins = false,
     required String paymentType,
     String? transactionId,
   }) async {
@@ -40,6 +41,7 @@ class OrderProvider extends ChangeNotifier {
         items: items,
         addressId: addressId,
         couponCode: couponCode,
+        useCoins: useCoins,
         paymentType: paymentType,
         transactionId: transactionId,
       );

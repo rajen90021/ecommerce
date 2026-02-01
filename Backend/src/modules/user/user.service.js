@@ -17,7 +17,7 @@ import sequelize from '../../database/connection.js';
 
 class UserService {
     async registerUser(data) {
-        const { name, password, email, phone, address, role: roleName } = data;
+        const { name, password, email, phone, address, role: roleName, referral_code } = data;
 
         const allowedRoles = enumRole;
         const requestedRole = roleName || 'customer'; // Default to customer
@@ -34,6 +34,7 @@ class UserService {
             throw error;
         }
 
+
         let roleData = await userRepository.findRoleByName(requestedRole);
         if (!roleData) {
             // Self-healing: Create role if missing
@@ -46,22 +47,42 @@ class UserService {
             });
         }
 
+        let referrer = null;
+        if (referral_code) {
+            referrer = await userRepository.findByReferralCode(referral_code);
+            if (!referrer) {
+                const error = new Error('Invalid Referral Code');
+                error.statusCode = 400;
+                throw error;
+            }
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         const result = await sequelize.transaction(async (t) => {
+            const myReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
             const newUser = await userRepository.create({
                 id: uuidv4(),
                 name,
                 password: hashedPassword,
                 email,
                 phone,
+                referral_code: myReferralCode,
+                referred_by: referrer ? referrer.id : null,
+                coins: referrer ? 10 : 0,
                 is_verified: false,
                 otp_code: otp,
                 otp_expires_at: new Date(Date.now() + 10 * 60 * 1000),
                 createdAt: new Date(),
                 updatedAt: new Date()
             }, t);
+
+            if (referrer) {
+                referrer.coins = (referrer.coins || 0) + 10;
+                await userRepository.saveUser(referrer, t);
+            }
 
             if (address) {
                 await userRepository.createAddress({
@@ -140,7 +161,7 @@ class UserService {
         return { user: userJson, token };
     }
 
-    async loginWithPhone(phone, firebaseUid) {
+    async loginWithPhone(phone, firebaseUid, referralCode) {
         // Try finding by firebase_uid first
         let user = await User.findOne({ where: { firebase_uid: firebaseUid }, include: ['roles', 'addresses'] });
 
@@ -152,6 +173,20 @@ class UserService {
                 user.firebase_uid = firebaseUid;
                 await user.save();
             }
+        }
+
+        // --- TESTING ONLY: Auto-Refill for your specific test account ---
+        // This ensures you have coins to test the "Redeem" feature
+        if (user && user.phone === '+911234567898' && user.coins < 60) {
+            user.coins = 100;
+            await user.save();
+        }
+        // ----------------------------------------------------------------
+
+        if (user && !user.referral_code) {
+            user.referral_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+            user.coins = user.coins || 0;
+            await user.save();
         }
 
         if (!user) {
@@ -168,7 +203,14 @@ class UserService {
                 });
             }
 
+            let referrer = null;
+            if (referralCode) {
+                referrer = await userRepository.findByReferralCode(referralCode);
+            }
+
             user = await sequelize.transaction(async (t) => {
+                const myReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
                 const newUser = await userRepository.create({
                     id: uuidv4(),
                     name: phone ? 'User ' + phone.slice(-4) : 'User',
@@ -176,10 +218,18 @@ class UserService {
                     password: null,
                     phone: phone,
                     firebase_uid: firebaseUid,
+                    referral_code: myReferralCode,
+                    coins: referrer ? 50 : 0,
+                    referred_by: referrer ? referrer.id : null,
                     is_verified: true, // Auto-verified by Firebase
                     createdAt: new Date(),
                     updatedAt: new Date()
                 }, t);
+
+                if (referrer) {
+                    referrer.coins = (referrer.coins || 0) + 50;
+                    await userRepository.saveUser(referrer, t);
+                }
 
                 await userRepository.addRoleToUser(newUser, roleData, t);
                 return newUser;
@@ -337,6 +387,12 @@ class UserService {
             const error = new Error('User not found');
             error.statusCode = 404;
             throw error;
+        }
+
+        if (!user.referral_code) {
+            user.referral_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+            user.coins = user.coins || 0;
+            await user.save();
         }
 
         const userJson = user.toJSON();

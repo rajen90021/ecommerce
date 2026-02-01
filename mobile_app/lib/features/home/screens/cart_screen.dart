@@ -44,6 +44,8 @@ class _CartScreenState extends State<CartScreen> {
     if (addressProv.selectedAddress != null) {
       await cart.updateShippingFromAddress(addressProv.selectedAddress!.city);
     }
+    
+    await cart.fetchUserCoins();
   }
 
   @override
@@ -117,8 +119,11 @@ class _CartScreenState extends State<CartScreen> {
                     }).toList(),
 
                     const SizedBox(height: 32),
-                    _buildCouponSection(cart),
                     const SizedBox(height: 32),
+                    _buildCouponSection(cart),
+                    const SizedBox(height: 24),
+                    _buildCoinSection(context, cart),
+                    const SizedBox(height: 24),
                     _buildPriceDetails(cart),
                     const SizedBox(height: 40),
                   ],
@@ -446,6 +451,56 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  Widget _buildCoinSection(BuildContext context, CartProvider cart) {
+    if (cart.coinBalance == 0) return const SizedBox.shrink();
+
+    bool isEligible = cart.coinBalance >= 50;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+           const BoxShadow(color: Color(0x08000000), blurRadius: 4, offset: Offset(0, 2))
+        ]
+      ),
+      child: Column(
+          children: [
+             Row(
+                children: [
+                    const Icon(Icons.monetization_on_rounded, color: Colors.amber),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                                Text(
+                                    "SafeCoins Balance: ${cart.coinBalance}",
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                if (!isEligible)
+                                    const Text("Min 50 coins required to redeem", style: TextStyle(fontSize: 11, color: Colors.grey))
+                                else
+                                    const Text("1 Coin = ₹1", style: TextStyle(fontSize: 11, color: Colors.grey))
+                            ],
+                        ),
+                    ),
+                    Switch(
+                        value: cart.useCoins, 
+                        onChanged: isEligible 
+                            ? (val) => cart.toggleUseCoins(val)
+                            : null,
+                        activeColor: AppColors.primary,
+                    )
+                ],
+             ),
+          ],
+      ),
+    );
+  }
+
   Widget _availableCouponItem(OfferModel offer, CartProvider cart) {
     bool isEligible = cart.subTotal >= offer.minOrderAmount;
     
@@ -512,8 +567,14 @@ class _CartScreenState extends State<CartScreen> {
         const SizedBox(height: 16),
         _priceRow('Total MRP', '₹${cart.subTotal.toInt()}'),
         const SizedBox(height: 12),
-        _priceRow('Coupon Discount', '-₹${cart.couponDiscount.toInt()}', color: Colors.green),
-        const SizedBox(height: 12),
+        if (cart.couponDiscount > 0) ...[
+            _priceRow('Coupon Discount', '-₹${cart.couponDiscount.toInt()}', color: Colors.green),
+            const SizedBox(height: 12),
+        ],
+        if (cart.coinDiscountAmount > 0) ...[
+             _priceRow('Coins Redeemed', '-₹${cart.coinDiscountAmount.toInt()}', color: Colors.green),
+             const SizedBox(height: 12),
+        ],
         _priceRow(
           'Shipping Fee', 
           cart.shippingFee == 0 ? 'FREE' : '₹${cart.shippingFee.toInt()}',

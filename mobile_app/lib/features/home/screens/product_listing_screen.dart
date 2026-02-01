@@ -19,6 +19,7 @@ class ProductListingScreen extends StatefulWidget {
   final bool? isNewArrival;
   final String? sortBy;
   final String? sortOrder;
+  final bool? openSearchKeyboard;
 
   const ProductListingScreen({
     super.key,
@@ -31,6 +32,7 @@ class ProductListingScreen extends StatefulWidget {
     this.isNewArrival,
     this.sortBy,
     this.sortOrder,
+    this.openSearchKeyboard,
   });
 
   @override
@@ -64,6 +66,9 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
     if (widget.sortOrder != null) _sortOrder = widget.sortOrder!;
     if (widget.searchQuery != null) {
       _localSearchController.text = widget.searchQuery!;
+      _isSearchActive = true;
+    }
+    if (widget.openSearchKeyboard == true) {
       _isSearchActive = true;
     }
     

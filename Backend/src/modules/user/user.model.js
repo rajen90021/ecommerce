@@ -59,6 +59,19 @@ const user = sequelize.define('user', {
         allowNull: true,
         field: 'created_at'
     },
+    referral_code: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+    },
+    referred_by: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
+    coins: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
     updatedAt: {
         type: DataTypes.DATE,
         allowNull: true,

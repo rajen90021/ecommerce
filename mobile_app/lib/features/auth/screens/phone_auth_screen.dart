@@ -22,6 +22,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _referralController = TextEditingController();
+  bool _showReferral = false;
   final TextEditingController _otpController = TextEditingController();
   bool _isOtpSent = false;
   String? _verificationId;
@@ -154,6 +156,36 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => setState(() => _showReferral = !_showReferral),
+                      child: Text(
+                        _showReferral ? "Hide Referral Code" : "Have a Referral Code?",
+                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (_showReferral)
+                      FadeInUp(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.02),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: AppTextField(
+                            controller: _referralController,
+                            label: "Referral Code (Optional)",
+                            hint: "Enter code here",
+                            prefixIcon: Icons.card_giftcard,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 40),
                     FadeInUp(
                       delay: const Duration(milliseconds: 200),
@@ -320,6 +352,7 @@ class _LoginScreenState extends State<LoginScreen> {
           body: jsonEncode({
             'phone': user.phoneNumber,
             'firebaseUid': user.uid,
+            'referralCode': _referralController.text.isNotEmpty ? _referralController.text.trim() : null,
           }),
        );
 

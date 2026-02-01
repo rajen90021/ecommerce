@@ -1,7 +1,7 @@
 class ApiConstants {
   // Base URL
-  static const String baseUrl = 'https://kalimgo-backend-final.onrender.com/api/';
-  // static const String baseUrl = 'http://10.0.2.2:6006/api/';
+  // static const String baseUrl = 'https://kalimgo-backend-final.onrender.com/api/';
+  static const String baseUrl = 'http://10.0.2.2:6006/api/';
   
   // Authentication Endpoints
   static const String loginPhone = 'users/login-phone';

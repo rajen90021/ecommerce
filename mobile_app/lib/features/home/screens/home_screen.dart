@@ -1,6 +1,8 @@
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/services/category_service.dart';
@@ -13,6 +15,7 @@ import '../widgets/promo_banner.dart';
 import '../widgets/section_header.dart';
 import '../widgets/product_card.dart';
 import '../widgets/category_chip.dart';
+import '../widgets/modern_home_header.dart'; // Import New Header
 import 'product_listing_screen.dart';
 import 'product_details_screen.dart';
 import 'categories_screen.dart';
@@ -53,13 +56,18 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSearching = false;
   String? _errorMessage;
 
+  String? _currentUserName;
+
   @override
   void initState() {
     super.initState();
+    _currentUserName = widget.userName;
+    _loadUserName(); // Fetch latest from prefs
     _fetchData();
     _searchController.addListener(() {
       _onSearchChanged(_searchController.text);
     });
+    // ... existing listeners
     _scrollController.addListener(() {
       if (_scrollController.offset > 50 && !_isScrolled) {
         setState(() => _isScrolled = true);
@@ -67,6 +75,23 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _isScrolled = false);
       }
     });
+  }
+
+  Future<void> _loadUserName() async {
+      try {
+          final prefs = await SharedPreferences.getInstance(); // Import needed if not present
+          final dataString = prefs.getString('user_data');
+          if (dataString != null) {
+              final data = jsonDecode(dataString); // Import dart:convert
+              if (data['name'] != null && mounted) {
+                  setState(() {
+                      _currentUserName = data['name'];
+                  });
+              }
+          }
+      } catch (e) {
+          debugPrint("Error loading user name: $e");
+      }
   }
 
   Future<void> _onSearchChanged(String query) async {
@@ -174,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBody: true,
       appBar: _buildDynamicAppBar(),
       drawer: HomeDrawer(
-        userName: widget.userName,
+        userName: _currentUserName, // Use local state
         currentIndex: _page,
         onPageChange: (index) {
           setState(() => _page = index);
@@ -182,25 +207,28 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: HomeBottomNavBar(
         currentIndex: _page,
-        onTap: (index) => setState(() => _page = index),
+        onTap: (index) {
+            setState(() => _page = index);
+            _loadUserName(); // Refresh name on tab change
+        },
       ),
       body: Stack(
         children: [
           RefreshIndicator(
-            onRefresh: _fetchData,
+            onRefresh: () async {
+                await _fetchData();
+                await _loadUserName();
+            },
             color: AppColors.primary,
-            child: SafeArea(
-              bottom: false,
-              child: _buildBody(),
-            ),
+            child: _buildBody(), // Removed SafeArea here, Header handles top padding
           ),
-          if (_suggestions.isNotEmpty && _page == 0) ...[
-            GestureDetector(
-              onTap: () => setState(() => _suggestions = []),
-              child: Container(color: Colors.black.withOpacity(0.01)),
-            ),
-            _buildSuggestionsOverlay(),
-          ],
+          // if (_suggestions.isNotEmpty && _page == 0) ...[
+          //   GestureDetector(
+          //     onTap: () => setState(() => _suggestions = []),
+          //     child: Container(color: Colors.black.withOpacity(0.01)),
+          //   ),
+          //   _buildSuggestionsOverlay(),
+          // ],
           const ViewBagWidget(),
         ],
       ),
@@ -210,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
   PreferredSizeWidget? _buildDynamicAppBar() {
     switch (_page) {
       case 0:
-        return HomeAppBar(isScrolled: _isScrolled);
+        return null; // No default AppBar for Home, using custom header
       case 1:
         return AppBar(
           title: const Text('All Categories', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 18)),
@@ -236,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 3:
         return null; // Profile has its own fancy header
       default:
-        return HomeAppBar(isScrolled: _isScrolled);
+        return null;
     }
   }
 
@@ -245,11 +273,11 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return _buildHomeView();
       case 1:
-        return FadeIn(child: const CategoriesScreen(isTab: true));
+        return SafeArea(child: FadeIn(child: const CategoriesScreen(isTab: true)));
       case 2:
-        return FadeIn(child: const WishlistScreen(isTab: true));
+        return SafeArea(child: FadeIn(child: const WishlistScreen(isTab: true)));
       case 3:
-        return FadeIn(child: const ProfileScreen());
+        return SafeArea(child: FadeIn(child: const ProfileScreen()));
       default:
         return _buildHomeView();
     }
@@ -285,227 +313,69 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return ListView(
-      controller: _scrollController,
+      controller: _scrollController, // IMPORTANT: ScrollController must be attached
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.zero, // Remove padding to let header touch top
       children: [
-        const SizedBox(height: 16),
-        _buildWelcomeHeader(),
-        const SizedBox(height: 24),
-        _buildSearchBar(),
-        const SizedBox(height: 24),
-        const DeliveryPromiseSlider(),
-        const SizedBox(height: 24),
-        FadeInDown(child: const PromoBanner()),
-        const SizedBox(height: 32),
+        // New Modern Header
+        // New Modern Header
+        ModernHomeHeader(
+          userName: _currentUserName,
+          onSearchTap: _navigateToFullSearch,
+          onDrawerTap: () => _scaffoldKey.currentState?.openDrawer(),
+          onProfileTap: () => setState(() => _page = 3),
+          onWishlistTap: () => setState(() => _page = 2),
+        ),
         
-        // Categories Section
-        _buildCategoriesSection(),
-        const SizedBox(height: 32),
-        
-        // Featured Products Section
-        if (_featuredProducts.isNotEmpty) ...[
-          _buildFeaturedSection(),
-          const SizedBox(height: 32),
-        ],
-        
-        // Trending Products Section
-        if (_trendingProducts.isNotEmpty) ...[
-          _buildTrendingSection(),
-          const SizedBox(height: 32),
-        ],
-        
-        // New Arrivals Section
-        if (_newArrivals.isNotEmpty) ...[
-          _buildNewArrivalsSection(),
-          const SizedBox(height: 32),
-        ],
-        
-        // Best Sellers Section
-        if (_bestSellers.isNotEmpty) ...[
-          _buildBestSellersSection(),
-          const SizedBox(height: 32),
-        ],
-        
-        const SizedBox(height: 120),
-      ],
-    );
-  }
-
-  Widget _buildWelcomeHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FadeInLeft(
-          child: Row(
+        // Content with padding
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
             children: [
-              Container(
-                width: 4,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'WELCOME, ${widget.userName?.toUpperCase() ?? 'GUEST'}',
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                ),
-              ),
+              const SizedBox(height: 24),
+              const DeliveryPromiseSlider(),
+              const SizedBox(height: 24),
+              FadeInDown(child: const PromoBanner()),
+              const SizedBox(height: 32),
+              
+              // Categories Section
+              _buildCategoriesSection(),
+              const SizedBox(height: 32),
+              
+              // Featured Products Section
+              if (_featuredProducts.isNotEmpty) ...[
+                _buildFeaturedSection(),
+                const SizedBox(height: 32),
+              ],
+              
+              // Trending Products Section
+              if (_trendingProducts.isNotEmpty) ...[
+                _buildTrendingSection(),
+                const SizedBox(height: 32),
+              ],
+              
+              // New Arrivals Section
+              if (_newArrivals.isNotEmpty) ...[
+                _buildNewArrivalsSection(),
+                const SizedBox(height: 32),
+              ],
+              
+              // Best Sellers Section
+              if (_bestSellers.isNotEmpty) ...[
+                _buildBestSellersSection(),
+                const SizedBox(height: 32),
+              ],
+              
+              const SizedBox(height: 120),
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        FadeInLeft(
-          delay: const Duration(milliseconds: 100),
-          child: RichText(
-            text: const TextSpan(
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                color: AppColors.accent,
-                letterSpacing: -1,
-                height: 1.1,
-              ),
-              children: [
-                TextSpan(text: 'Explore Your\n'),
-                TextSpan(
-                  text: 'KalimGo',
-                  style: TextStyle(color: AppColors.primary),
-                ),
-              ],
-            ),
-          ),
-        ),
-      
-        
       ],
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return FadeInUp(
-      delay: const Duration(milliseconds: 200),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accent.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchController,
-          onSubmitted: (value) {
-            if (value.trim().isNotEmpty) {
-              _navigateToSearch(value);
-              setState(() => _suggestions = []);
-            }
-          },
-          style: const TextStyle(fontWeight: FontWeight.w500),
-          decoration: InputDecoration(
-            hintText: 'Search collections, trends...',
-            hintStyle: TextStyle(
-              color: AppColors.textSecondary.withOpacity(0.5),
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-            ),
-            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 24),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _suggestions = []);
-                    },
-                  )
-                : Container(
-                    margin: const EdgeInsets.all(8),
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
-                  ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 18),
-          ),
-        ),
-      ),
     );
   }
 
   Widget _buildSuggestionsOverlay() {
-    return Positioned(
-      top: 155, // Adjusted for HomeAppBar + Welcome Header spacing
-      left: 20,
-      right: 20,
-      child: Material(
-        elevation: 8,
-        color: Colors.transparent,
-        child: FadeIn(
-          child: Container(
-            constraints: const BoxConstraints(maxHeight: 400),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              itemCount: _suggestions.length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                color: Colors.grey[100],
-                indent: 16,
-                endIndent: 16,
-              ),
-              itemBuilder: (context, index) {
-                final product = _suggestions[index];
-                return ListTile(
-                  leading: const Icon(Icons.search_rounded,
-                      color: Colors.grey, size: 18),
-                  title: Text(
-                    product.name,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  trailing: Text(
-                    '₹${product.price.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  onTap: () {
-                    setState(() => _suggestions = []);
-                    _navigateToProductDetails(product);
-                  },
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
+    return const SizedBox.shrink(); // Removed overlay
   }
 
   void _navigateToSearch(String query) {
@@ -519,6 +389,20 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+  
+  void _navigateToFullSearch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ProductListingScreen(
+          title: 'Search Products',
+          openSearchKeyboard: true,
+        ),
+      ),
+    );
+  }
+
+
 
   Widget _buildCategoriesSection() {
     return Column(

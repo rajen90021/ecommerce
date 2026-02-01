@@ -16,23 +16,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  final List<OnboardingItem> _items = [
-    OnboardingItem(
-      title: "Discover Latest\nFashion Trends",
-      description: "Explore our curated collections of premium and trendy apparel designed for your unique style.",
-      imagePath: AppAssets.onboarding1,
-    ),
-    OnboardingItem(
-      title: "Fast & Reliable\nExpress Delivery",
-      description: "Get your favorite outfits delivered to your doorstep with lightning-fast and secure shipping.",
-      imagePath: AppAssets.onboarding2,
-    ),
-    OnboardingItem(
-      title: "Premium Quality\nYou Can Trust",
-      description: "Experience the luxury of high-quality fabrics and expert craftsmanship in every garment.",
-      imagePath: AppAssets.onboarding3,
-    ),
-  ];
+ final List<OnboardingItem> _items = [
+  OnboardingItem(
+    title: "Discover Latest\nFashion Trends",
+    description:
+        "Explore unique fashion crafted locally by Kalimgo, blending modern style with authentic local craftsmanship.",
+    imagePath: AppAssets.promoSale,
+  ),
+  OnboardingItem(
+    title: "Fast & Reliable\nExpress Delivery",
+    description:
+        "Proudly made locally and delivered with care—bringing Kalimgo products straight from our community to your doorstep.",
+    imagePath: AppAssets.promoDelivery,
+  ),
+  OnboardingItem(
+    title: "Premium Quality\nYou Can Trust",
+    description:
+        "Experience premium quality from Kalimgo, a locally made brand focused on durability, comfort, and trust.",
+    imagePath: AppAssets.promoReady,
+  ),
+];
+
 
   @override
   Widget build(BuildContext context) {

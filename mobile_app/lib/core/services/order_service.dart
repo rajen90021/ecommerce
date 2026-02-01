@@ -11,6 +11,7 @@ class OrderService {
     required List<Map<String, dynamic>> items,
     required String addressId,
     String? couponCode,
+    bool useCoins = false,
     required String paymentType,
     String? transactionId,
   }) async {
@@ -20,6 +21,7 @@ class OrderService {
         'items': items,
         'shipping_address_id': addressId,
         'coupon_code': couponCode,
+        'use_coins': useCoins,
         'payment_type': paymentType,
         'payment_transaction_id': transactionId,
       },

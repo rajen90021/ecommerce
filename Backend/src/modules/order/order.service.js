@@ -56,6 +56,7 @@ class OrderService {
             shipping_address_id,
             custom_shipping_address,
             coupon_code,
+            use_coins = false, // New Flag
             payment_type = 'cod',
             payment_transaction_id = null
         } = data;
@@ -64,6 +65,23 @@ class OrderService {
             const error = new Error('Order items are required');
             error.statusCode = 400;
             throw error;
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user) throw new Error('User not found');
+
+        let coinsRedeemed = 0;
+        let coinDiscount = 0;
+
+        // 1. Calculate Coin Discount if requested
+        if (use_coins) {
+            if (user.coins < 50) {
+                const error = new Error('You need a minimum of 50 coins to redeem points.');
+                error.statusCode = 400;
+                throw error;
+            }
+            coinsRedeemed = user.coins;
+            coinDiscount = user.coins; // 1 Coin = 1 Rupee (Simple Logic)
         }
 
         const orderItemsData = [];
@@ -148,8 +166,26 @@ class OrderService {
 
         const amounts = await calculateOrderAmounts(orderItemsData, coupon_code, 50);
 
+        // Apply Coin Discount
+        if (coinDiscount > 0) {
+            // Ensure we don't discount more than total
+            if (coinDiscount > amounts.total_amount) {
+                coinDiscount = amounts.total_amount;
+                coinsRedeemed = coinDiscount;
+            }
+            amounts.discount_amount += coinDiscount;
+            amounts.gross_amount = amounts.total_amount - amounts.discount_amount;
+            amounts.net_amount = amounts.gross_amount + amounts.shipping_amount;
+        }
+
         // 4. Execution within Transaction
         return await sequelize.transaction(async (t) => {
+            // Deduct Coins from User
+            if (coinsRedeemed > 0) {
+                user.coins -= coinsRedeemed;
+                await user.save({ transaction: t });
+            }
+
             // Create Order
             const order = await orderRepository.create({
                 user_id: userId,

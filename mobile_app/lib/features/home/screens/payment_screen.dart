@@ -58,6 +58,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         items: items,
         addressId: addressProvider.selectedAddress!.id!,
         couponCode: cart.appliedCoupon,
+        useCoins: cart.useCoins,
         paymentType: _selectedMethod,
       );
 
@@ -134,6 +135,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                     _priceRow('Total MRP', '₹${cart.subTotal.toInt()}'),
                     if (cart.couponDiscount > 0)
                       _priceRow('Coupon Discount', '-₹${cart.couponDiscount.toInt()}', color: Colors.green),
+                    if (cart.coinDiscountAmount > 0)
+                      _priceRow('Coins Redeemed', '-₹${cart.coinDiscountAmount.toInt()}', color: Colors.green),
                     _priceRow('Shipping Fee', cart.shippingFee == 0 ? 'FREE' : '₹${cart.shippingFee.toInt()}'),
                     const Divider(height: 32),
                     _priceRow('Total Amount', '₹${cart.totalAmount.toInt()}', isBold: true),
