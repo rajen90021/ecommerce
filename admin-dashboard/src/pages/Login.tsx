@@ -59,7 +59,7 @@ const Login: React.FC = () => {
             <div className="w-20 h-20 bg-brand-primary rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-brand-primary/20 transform rotate-3 hover:rotate-0 transition-transform duration-500">
               <span className="text-4xl font-black text-white leading-none">S</span>
             </div>
-            <h1 className="text-3xl font-black text-brand-accent mt-8 tracking-tight text-center leading-none">ShivBuzz Admin</h1>
+            <h1 className="text-3xl font-black text-brand-accent mt-8 tracking-tight text-center leading-none">Kalimgo Admin</h1>
             <div className="h-1.5 w-12 bg-brand-primary rounded-full mt-4" />
           </div>
 

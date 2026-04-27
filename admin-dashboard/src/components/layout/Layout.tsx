@@ -97,12 +97,12 @@ const AppLayout: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-12 px-6 border-b border-white/5">
           <div className="flex flex-col items-center transition-all duration-500">
              <div className={`shrink-0 transition-all duration-500 ${(collapsed && !isMobile) ? 'w-12 h-12 mb-0' : 'w-20 h-20 mb-5'} bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-brand-primary/50 shadow-2xl shadow-brand-primary/10`}>
-                <img src={logo} alt="ShivBiz Logo" className="w-[85%] h-auto object-contain" />
+                <img src={logo} alt="Kalimgo Logo" className="w-[85%] h-auto object-contain" />
              </div>
             {(!collapsed || isMobile) && (
               <div className="flex flex-col items-center text-center">
                 <span className="text-white/40 text-[8px] font-black tracking-[0.3em] mb-1.5 uppercase">Premium Management</span>
-                <span className="text-white text-2xl font-black tracking-tighter leading-none italic uppercase">SHIVBIZ</span>
+                <span className="text-white text-2xl font-black tracking-tighter leading-none italic uppercase">KALIMGO</span>
                 <span className="text-brand-primary text-[10px] font-black uppercase tracking-[0.2em] mt-3">Admin Console</span>
                 <div className="flex items-center mt-3 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2 animate-pulse" />
@@ -305,7 +305,7 @@ const AppLayout: React.FC = () => {
 
         <footer className="py-10 text-center px-4">
             <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em]">
-                ShivBuzz Console © 2026 Integrated Neural Network
+                Kalimgo Console © 2026 Integrated Neural Network
             </p>
         </footer>
       </Layout>

@@ -231,7 +231,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ open, onClose, product, onSuc
           </Col>
           <Col xs={24} sm={8}>
             <Form.Item name="brand" label="Brand">
-              <Input placeholder="e.g. SHIVBUZZ" />
+              <Input placeholder="e.g. KALIMGO" />
             </Form.Item>
           </Col>
           <Col xs={24} sm={8}>
