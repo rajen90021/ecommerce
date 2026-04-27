@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Card, Switch, message, Modal, Form, Input, InputNumber, Space, Popconfirm, Tag } from 'antd';
+import { Table, Button, Card, Switch, message, Modal, Form, Input, InputNumber, Space, Popconfirm, Tag, Grid } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { locationService } from '../services/locationService';
 import type { Location } from '../services/locationService';
+import type { ColumnsType } from 'antd/es/table';
+
+const { useBreakpoint } = Grid;
 
 const Locations: React.FC = () => {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const [form] = Form.useForm();
@@ -64,53 +70,63 @@ const Locations: React.FC = () => {
     }
   };
 
-  const columns = [
+  const columns: ColumnsType<Location> = [
     {
       title: 'City Name',
       dataIndex: 'city_name',
       key: 'city_name',
+      width: 150,
+      fixed: (isMobile ? undefined : 'left') as any,
       render: (text: string) => <span style={{ fontWeight: 700 }}>{text.toUpperCase()}</span>,
     },
     {
       title: 'State',
       dataIndex: 'state',
       key: 'state',
+      width: 150,
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
       title: 'Pincode',
       dataIndex: 'pincode',
       key: 'pincode',
+      width: 120,
       render: (text: string) => <Tag color="orange">{text}</Tag>,
     },
     {
       title: 'Delivery Charge',
       dataIndex: 'delivery_charge',
       key: 'delivery_charge',
+      width: 150,
       render: (val: number) => `₹${Number(val).toFixed(2)}`,
     },
     {
       title: 'Min Order',
       dataIndex: 'min_order_amount',
       key: 'min_order_amount',
+      width: 120,
       render: (val: number) => `₹${Number(val).toFixed(2)}`,
     },
     {
       title: 'Status',
       dataIndex: 'is_active',
       key: 'is_active',
+      width: 120,
       render: (active: boolean, record: Location) => (
         <Switch 
           checked={active} 
           onChange={() => toggleStatus(record)}
           checkedChildren="ACTIVE"
           unCheckedChildren="INACTIVE"
+          size={isMobile ? 'small' : 'default'}
         />
       ),
     },
     {
       title: 'Action',
       key: 'action',
+      width: 120,
+      fixed: (isMobile ? undefined : 'right') as any,
       render: (_: any, record: Location) => (
         <Space size="middle">
           <Button 
@@ -137,38 +153,42 @@ const Locations: React.FC = () => {
   ];
 
   return (
-    <div className="p-0">
+    <div className="p-0 space-y-6 sm:space-y-12">
       <Card 
         variant="borderless" 
-        style={{ borderRadius: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
-        title={
-          <div className="py-2">
-            <h1 className="text-2xl font-black text-brand-accent tracking-tighter">Location Management</h1>
-            <p className="text-brand-textSecondary text-xs mt-1 font-bold uppercase tracking-widest">Service areas and logistics configuration</p>
+        style={{ borderRadius: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
+        styles={{ body: { padding: '24px 16px' } }}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-4xl font-black text-brand-accent tracking-tighter">Location Management</h1>
+            <p className="text-brand-textSecondary mt-1 sm:text-[14px] text-[12px] font-medium uppercase tracking-widest">Service areas and logistics configuration</p>
           </div>
-        }
-        extra={
           <Button 
             type="primary" 
+            size="large"
             icon={<PlusOutlined />} 
             onClick={() => {
               setEditingLocation(null);
               form.resetFields();
               setModalVisible(true);
             }}
-            style={{ borderRadius: 12, height: 45, padding: '0 24px', fontWeight: 900 }}
+            style={{ borderRadius: 12, height: 50, padding: '0 24px', fontWeight: 900 }}
           >
-            ADD NEW REGION
+            {isMobile ? 'ADD REGION' : 'ADD NEW REGION'}
           </Button>
-        }
-      >
+        </div>
+      </Card>
+
+      <Card variant="borderless" style={{ borderRadius: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }} styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
           dataSource={locations} 
           rowKey="id" 
           loading={loading}
-          pagination={{ pageSize: 10 }}
-          style={{ marginTop: 16 }}
+          scroll={{ x: 800, y: 'calc(100vh - 420px)' }}
+          className="premium-table"
+          pagination={{ pageSize: 10, className: "px-8 py-6" }}
         />
       </Card>
 
@@ -183,7 +203,8 @@ const Locations: React.FC = () => {
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
         okText={editingLocation ? 'UPDATE REGION' : 'CREATE REGION'}
-        width={500}
+        width={isMobile ? '95%' : 500}
+        centered
         styles={{ body: { paddingTop: 24 } }}
       >
         <Form

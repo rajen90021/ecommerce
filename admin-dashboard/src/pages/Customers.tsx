@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Table, Tag, Avatar, Card, message, Progress, Input, Button, Space } from 'antd';
+import { Table, Tag, Avatar, Card, message, Progress, Input, Button, Space, Grid } from 'antd';
 import type { InputRef } from 'antd';
 import { 
   TeamOutlined,
@@ -15,10 +15,15 @@ import { userService } from '../services/userService';
 import type { User } from '../types';
 import { format } from 'date-fns';
 
+const { useBreakpoint } = Grid;
+
 const Customers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({
     current: 1,
@@ -120,11 +125,11 @@ const Customers: React.FC = () => {
       title: 'Customer Profile',
       key: 'user',
       width: 300,
-      fixed: 'left',
+      fixed: isMobile ? undefined : 'left',
       ...getColumnSearchProps('name'),
       render: (_, record: User) => (
         <div className="flex items-center space-x-4 overflow-hidden">
-          <Avatar src={record.image} size={50} style={{ border: '2px solid #f0f0f0' }}>
+          <Avatar src={record.image} size={isMobile ? 40 : 50} style={{ border: '2px solid #f0f0f0' }}>
             {record.name.charAt(0).toUpperCase()}
           </Avatar>
           <div className="overflow-hidden">
@@ -194,22 +199,22 @@ const Customers: React.FC = () => {
   ];
 
   return (
-    <div className="p-0 space-y-12">
+    <div className="p-0 space-y-6 sm:space-y-12">
       {/* Header */}
-      <Card variant="borderless" style={{ borderRadius: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <Card variant="borderless" style={{ borderRadius: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }} styles={{ body: { padding: '24px 16px' } }}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex-1">
-            <h1 className="text-4xl font-black text-brand-accent tracking-tighter">Customer CRM</h1>
-            <p className="text-brand-textSecondary mt-2 font-medium">Analyze and manage your registered user base.</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-brand-accent tracking-tighter">Customer CRM</h1>
+            <p className="text-brand-textSecondary mt-1 sm:text-[14px] text-[12px] font-medium">Analyze and manage your registered user base.</p>
           </div>
-          <Space className="w-full md:w-auto self-end md:self-center" size={16}>
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
             <Input
               placeholder="Search customers..."
               prefix={<SearchOutlined className="text-gray-400" />}
               value={searchText}
               onChange={(e) => handleGlobalSearch(e.target.value)}
-              style={{ borderRadius: 12, height: 50, width: 250, background: '#f8f9fb', border: 'none' }}
-              className="hidden sm:flex"
+              style={{ borderRadius: 12, height: 50, background: '#f8f9fb', border: 'none' }}
+              className="w-full sm:w-64"
             />
             {searchText && (
               <Button 
@@ -221,14 +226,14 @@ const Customers: React.FC = () => {
                 Clear
               </Button>
             )}
-            <div className="flex bg-gray-50 px-6 py-4 rounded-3xl border border-gray-100 items-center space-x-4">
-                <TeamOutlined style={{ fontSize: 24, color: '#C62828' }} />
+            <div className="flex bg-gray-50/50 px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border border-gray-100 items-center space-x-4">
+                <TeamOutlined style={{ fontSize: 20, color: '#C62828' }} />
                 <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Total database</p>
-                    <p className="text-2xl font-black text-brand-accent leading-none">{pagination.total}</p>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Users</p>
+                    <p className="text-xl font-black text-brand-accent leading-none">{pagination.total}</p>
                 </div>
             </div>
-          </Space>
+          </div>
         </div>
       </Card>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, message, Card, Button, Tag, Select, Space, Modal, Descriptions, Divider } from 'antd';
+import { Table, message, Card, Button, Tag, Select, Space, Modal, Descriptions, Divider, Grid } from 'antd';
 import { 
   EyeOutlined,
   ShoppingOutlined,
@@ -17,9 +17,14 @@ import { orderService } from '../services/orderService';
 import type { Order } from '../types';
 import { format } from 'date-fns';
 
+const { useBreakpoint } = Grid;
+
 const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [pagination, setPagination] = useState({
@@ -105,6 +110,7 @@ const Orders: React.FC = () => {
       dataIndex: 'order_number',
       key: 'order_number',
       width: 150,
+      fixed: isMobile ? undefined : 'left',
       render: (text: string) => (
         <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
           {text}
@@ -194,7 +200,8 @@ const Orders: React.FC = () => {
     {
       title: 'Action',
       key: 'action',
-      width: 80,
+      width: 100,
+      fixed: isMobile ? undefined : 'right',
       align: 'center',
       render: (_, record: Order) => (
         <Button
@@ -210,47 +217,46 @@ const Orders: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="p-0 space-y-6 sm:space-y-12">
       {/* Header */}
-      <Card style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
-              <ShoppingOutlined style={{ marginRight: '12px' }} />
-              Order Management
-            </h1>
-            <p style={{ margin: '8px 0 0 0', color: '#666' }}>
-              Manage and track all customer orders
-            </p>
+      <Card variant="borderless" style={{ borderRadius: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }} styles={{ body: { padding: '24px 16px' } }}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-4xl font-black text-brand-accent tracking-tighter">Order Management</h1>
+            <p className="text-brand-textSecondary mt-1 sm:text-[14px] text-[12px] font-medium">Manage and track all customer orders in real-time.</p>
           </div>
-          <Space size="large">
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#1890ff' }}>
+          <div className="flex items-center space-x-6 sm:space-x-12 self-start md:self-center bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+            <div className="text-center">
+              <div className="text-xl sm:text-2xl font-black text-brand-primary leading-none">
                 {orders.filter(o => o.status === 'placed').length}
               </div>
-              <div style={{ fontSize: '12px', color: '#888' }}>New Orders</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">New</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#52c41a' }}>
+            <div className="w-px h-8 bg-gray-200" />
+            <div className="text-center">
+              <div className="text-xl sm:text-2xl font-black text-green-600 leading-none">
                 {orders.filter(o => o.status === 'delivered').length}
               </div>
-              <div style={{ fontSize: '12px', color: '#888' }}>Delivered</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Done</div>
             </div>
-          </Space>
+          </div>
         </div>
       </Card>
 
       {/* Orders Table */}
-      <Card>
+      <Card variant="borderless" style={{ borderRadius: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }} styles={{ body: { padding: 0 } }}>
         <Table
           columns={columns}
           dataSource={orders}
           rowKey="id"
           loading={loading}
+          scroll={{ x: 1200, y: 'calc(100vh - 420px)' }}
+          className="premium-table"
           pagination={{
             current: pagination.current,
             pageSize: pagination.pageSize,
             total: pagination.total,
+            className: "px-8 py-6",
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} orders`,
           }}
@@ -267,19 +273,21 @@ const Orders: React.FC = () => {
       {/* Order Details Modal */}
       <Modal
         title={
-          <div style={{ fontSize: '18px', fontWeight: 600 }}>
-            <ShoppingOutlined style={{ marginRight: '8px' }} />
-            Order Details
+          <div className="text-[16px] sm:text-[18px] font-black uppercase tracking-widest text-brand-accent">
+            <ShoppingOutlined className="mr-3" />
+            Order Intelligence
           </div>
         }
         open={detailsVisible}
         onCancel={() => setDetailsVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setDetailsVisible(false)}>
-            Close
+          <Button key="close" onClick={() => setDetailsVisible(false)} className="rounded-xl font-black">
+            CLOSE CONSOLE
           </Button>,
         ]}
-        width={800}
+        width={isMobile ? '95%' : 800}
+        centered
+        style={{ top: isMobile ? 10 : 20 }}
       >
         {selectedOrder && (
           <div>

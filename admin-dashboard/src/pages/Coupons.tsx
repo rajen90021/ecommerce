@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Table, Tag, Button, Modal, Form, Input, Select, InputNumber, DatePicker, message, Card, Row, Col, Tooltip, Space } from 'antd';
+import { Table, Tag, Button, Modal, Form, Input, Select, InputNumber, DatePicker, message, Card, Row, Col, Tooltip, Space, Grid } from 'antd';
 import type { InputRef } from 'antd';
 import type { ColumnsType, ColumnType } from 'antd/es/table';
 import { 
@@ -16,11 +15,17 @@ import { offerService } from '../services/offerService';
 import type { Coupon } from '../types';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
+import { useEffect, useRef, useState } from 'react';
+
+const { useBreakpoint } = Grid;
 
 const Coupons: React.FC = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [filteredCoupons, setFilteredCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [searchText, setSearchText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
@@ -177,7 +182,7 @@ const Coupons: React.FC = () => {
       dataIndex: 'code',
       key: 'code',
       width: 200,
-      fixed: 'left',
+      fixed: (isMobile ? undefined : 'left') as any,
       ...getColumnSearchProps('code'),
       render: (text: string) => (
         <span className="bg-brand-primaryLight text-brand-primary px-4 py-2 rounded-xl text-xs font-black tracking-widest border border-brand-primary/10">
@@ -259,7 +264,7 @@ const Coupons: React.FC = () => {
       title: 'Actions',
       key: 'actions',
       width: 100,
-      fixed: 'right',
+      fixed: (isMobile ? undefined : 'right') as any,
       render: (_, record: any) => (
         <Space size="small">
           <Tooltip title="Edit Campaign">
@@ -274,43 +279,45 @@ const Coupons: React.FC = () => {
   ];
 
   return (
-    <div className="p-0 space-y-12">
+    <div className="p-0 space-y-6 sm:space-y-12">
       {/* Header */}
-      <Card variant="borderless" style={{ borderRadius: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <Card variant="borderless" style={{ borderRadius: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }} styles={{ body: { padding: '24px 16px' } }}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex-1">
-            <h1 className="text-4xl font-black text-brand-accent tracking-tighter">Marketing Incentives</h1>
-            <p className="text-brand-textSecondary mt-2 font-medium">Create and manage high-conversion discount triggers.</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-brand-accent tracking-tighter">Marketing Incentives</h1>
+            <p className="text-brand-textSecondary mt-1 sm:text-[14px] text-[12px] font-medium">Create and manage high-conversion discount triggers.</p>
           </div>
-          <Space className="w-full md:w-auto self-end md:self-center" size={16}>
+          <div className="flex flex-col sm:flex-row gap-4">
             <Input
               placeholder="Search coupons..."
               prefix={<SearchOutlined className="text-gray-400" />}
               value={searchText}
               onChange={(e) => handleGlobalSearch(e.target.value)}
-              style={{ borderRadius: 12, height: 50, width: 250, background: '#f8f9fb', border: 'none' }}
-              className="hidden sm:flex"
+              style={{ borderRadius: 12, height: 50, background: '#f8f9fb', border: 'none' }}
+              className="w-full sm:w-64"
             />
-            {searchText && (
-              <Button 
-                icon={<ReloadOutlined />} 
-                onClick={clearAllFilters}
-                className="flex items-center justify-center"
-                style={{ borderRadius: 12, height: 50 }}
+            <div className="flex gap-2">
+              {searchText && (
+                <Button 
+                  icon={<ReloadOutlined />} 
+                  onClick={clearAllFilters}
+                  className="flex items-center justify-center"
+                  style={{ borderRadius: 12, height: 50 }}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                  type="primary"
+                  size="large"
+                  icon={<PlusOutlined />}
+                  onClick={() => openModal()}
+                  style={{ height: 50, flex: 1, borderRadius: 12, fontSize: 14, fontWeight: 900, boxShadow: '0 10px 20px rgba(198, 40, 40, 0.2)' }}
               >
-                Clear
+                  Launch New
               </Button>
-            )}
-            <Button
-                type="primary"
-                size="large"
-                icon={<PlusOutlined />}
-                onClick={() => openModal()}
-                style={{ height: 54, padding: '0 32px', borderRadius: 16, fontSize: 16, fontWeight: 900, boxShadow: '0 10px 20px rgba(198, 40, 40, 0.2)' }}
-            >
-                Launch New Coupon
-            </Button>
-          </Space>
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -335,7 +342,7 @@ const Coupons: React.FC = () => {
         style={{ borderRadius: 24 }}
         centered
         okText={editingCoupon ? "Update Coupon" : "Launch Coupon"}
-        width={600}
+        width={isMobile ? '95%' : 600}
       >
         <Form form={form} layout="vertical" onFinish={handleCreateOrUpdate} className="mt-6">
           <Row gutter={16}>
