@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Table, message, Card, Button, Tag, Space, Tooltip, Modal, Input } from 'antd';
+import { Table, message, Card, Button, Tag, Space, Tooltip, Modal, Input, Grid } from 'antd';
 import type { InputRef } from 'antd';
 import { 
   PlusOutlined, 
@@ -14,10 +14,15 @@ import { productService } from '../services/productService';
 import type { Product } from '../types';
 import ProductForm from '../components/products/ProductForm';
 
+const { useBreakpoint } = Grid;
+
 const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({
     current: 1,
@@ -147,7 +152,7 @@ const Products: React.FC = () => {
       dataIndex: 'images',
       key: 'image',
       width: 100,
-      fixed: 'left',
+      fixed: isMobile ? undefined : 'left',
       render: (images: any[]) => (
         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
           {images && images.length > 0 ? (
@@ -225,7 +230,7 @@ const Products: React.FC = () => {
       title: 'Actions',
       key: 'actions',
       width: 100,
-      fixed: 'right',
+      fixed: isMobile ? undefined : 'right',
       render: (_, record: Product) => (
         <Space size="small">
           <Tooltip title="Edit Product">
@@ -240,43 +245,47 @@ const Products: React.FC = () => {
   ];
 
   return (
-    <div className="p-0 space-y-12">
+    <div className="p-0 space-y-6 sm:space-y-12">
       {/* Header */}
-      <Card variant="borderless" style={{ borderRadius: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <Card variant="borderless" style={{ borderRadius: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }} styles={{ body: { padding: '24px 16px' } }}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex-1">
-            <h1 className="text-4xl font-black text-brand-accent tracking-tighter">Global Inventory</h1>
-            <p className="text-brand-textSecondary mt-2 font-medium">Manage and optimize your digital marketplace assets.</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-brand-accent tracking-tighter">Global Inventory</h1>
+            <p className="text-brand-textSecondary mt-1 sm:text-[14px] text-[12px] font-medium">Manage and optimize your digital marketplace assets.</p>
           </div>
-          <Space className="w-full md:w-auto self-end md:self-center" size={16}>
-            <Input
-              placeholder="Filter products..."
-              prefix={<SearchOutlined className="text-gray-400" />}
-              value={searchText}
-              onChange={(e) => handleGlobalSearch(e.target.value)}
-              style={{ borderRadius: 12, height: 50, width: 250, background: '#f8f9fb', border: 'none' }}
-              className="hidden sm:flex"
-            />
-            {(searchText || tableKey) && (
-              <Button 
-                icon={<ReloadOutlined />} 
-                onClick={clearAllFilters}
-                className="flex items-center justify-center"
-                style={{ borderRadius: 12, height: 50 }}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 sm:w-64">
+              <Input
+                placeholder="Filter products..."
+                prefix={<SearchOutlined className="text-gray-400" />}
+                value={searchText}
+                onChange={(e) => handleGlobalSearch(e.target.value)}
+                style={{ borderRadius: 12, height: 50, background: '#f8f9fb', border: 'none' }}
+                className="w-full"
+              />
+            </div>
+            <div className="flex gap-2">
+              {(searchText || tableKey) && (
+                <Button 
+                  icon={<ReloadOutlined />} 
+                  onClick={clearAllFilters}
+                  className="flex items-center justify-center"
+                  style={{ borderRadius: 12, height: 50 }}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                  type="primary"
+                  size="large"
+                  icon={<PlusOutlined />}
+                  onClick={() => openModal()}
+                  style={{ height: 50, flex: 1, borderRadius: 12, fontSize: 14, fontWeight: 900, boxShadow: '0 10px 20px rgba(198, 40, 40, 0.2)' }}
               >
-                Clear
+                  Add New
               </Button>
-            )}
-            <Button
-                type="primary"
-                size="large"
-                icon={<PlusOutlined />}
-                onClick={() => openModal()}
-                style={{ height: 54, padding: '0 32px', borderRadius: 16, fontSize: 16, fontWeight: 900, boxShadow: '0 10px 20px rgba(198, 40, 40, 0.2)' }}
-            >
-                Add New Product
-            </Button>
-          </Space>
+            </div>
+          </div>
         </div>
       </Card>
 

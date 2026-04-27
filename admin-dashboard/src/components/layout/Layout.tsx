@@ -194,7 +194,7 @@ const AppLayout: React.FC = () => {
       >
         <Header
           style={{
-            padding: isMobile ? '0 16px' : '0 32px',
+            padding: isMobile ? '0 12px' : '0 32px',
             height: 72,
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
@@ -208,24 +208,24 @@ const AppLayout: React.FC = () => {
             borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
           }}
         >
-          <div className="flex items-center space-x-6 flex-1">
+          <div className="flex items-center space-x-3 sm:space-x-6 flex-1">
             <Button
               type="text"
               icon={isMobile ? <MenuUnfoldOutlined /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
               onClick={() => isMobile ? setMobileVisible(true) : setCollapsed(!collapsed)}
               style={{
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 fontSize: '18px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: 'rgba(0,0,0,0.02)',
-                borderRadius: '12px'
+                borderRadius: '10px'
               }}
             />
             
-            <div className="max-w-[400px] w-full hidden sm:block">
+            <div className="max-w-[400px] w-full hidden md:block">
                 <Input
                   placeholder="Universal search..."
                   prefix={<SearchOutlined style={{ color: '#bfbfbf', fontSize: 16 }} />}
@@ -240,19 +240,19 @@ const AppLayout: React.FC = () => {
             </div>
           </div>
           
-          <Space size={isMobile ? 12 : 24}>
+          <Space size={isMobile ? 8 : 24}>
             <Badge count={3} size="small" offset={[-2, 6]}>
               <Button 
                 type="text" 
                 icon={<BellOutlined style={{ fontSize: 20, color: '#1a1a1a' }} />} 
                 style={{ 
-                    width: 44, 
-                    height: 44,
+                    width: 40, 
+                    height: 40,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     backgroundColor: 'rgba(0,0,0,0.02)',
-                    borderRadius: '12px'
+                    borderRadius: '10px'
                 }}
               />
             </Badge>
@@ -269,7 +269,7 @@ const AppLayout: React.FC = () => {
               placement="bottomRight"
               arrow
             >
-              <div className="flex items-center space-x-5 cursor-pointer hover:bg-black/5 px-4 py-2 rounded-2xl transition-all duration-300 border border-transparent hover:border-black/5">
+              <div className="flex items-center space-x-2 sm:space-x-5 cursor-pointer hover:bg-black/5 px-2 sm:px-4 py-2 rounded-2xl transition-all duration-300 border border-transparent hover:border-black/5">
                 {!isMobile && (
                   <div className="text-right hidden md:flex flex-col justify-center mr-1">
                     <p className="text-[13px] font-black leading-none mb-1.5 text-gray-900 tracking-tight">ADMIN USER</p>
@@ -277,7 +277,7 @@ const AppLayout: React.FC = () => {
                   </div>
                 )}
                 <Avatar 
-                  size={44} 
+                  size={isMobile ? 36 : 44} 
                   style={{ 
                     backgroundColor: '#1a1a1a',
                     border: '2px solid #fff',
@@ -293,12 +293,12 @@ const AppLayout: React.FC = () => {
         
         <Content
           style={{
-            margin: isMobile ? '24px 16px' : '40px 24px',
+            margin: isMobile ? '16px 12px' : '40px 24px',
             padding: 0,
             minHeight: 'calc(100vh - 150px)',
           }}
         >
-          <div className="max-w-[1600px] mx-auto overflow-hidden">
+          <div className="max-w-[1600px] mx-auto">
             <Outlet />
           </div>
         </Content>

@@ -105,17 +105,17 @@ const Dashboard: React.FC = () => {
   const { summary, growth, revenueData, categoryData, topProducts } = data;
 
   return (
-    <div className="p-0 space-y-12">
+    <div className="p-0 space-y-6 sm:space-y-12">
       {/* Header handled by Layout now if needed, but keeping page specific headers is good */}
-      <Card variant="borderless" style={{ borderRadius: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <Card variant="borderless" style={{ borderRadius: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }} styles={{ body: { padding: '24px 16px' } }}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
           <div>
-            <h1 className="text-4xl font-black text-brand-accent tracking-tighter">Enterprise Overview</h1>
-            <p className="text-brand-textSecondary mt-2 font-medium">Real-time intelligence and performance monitoring.</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-brand-accent tracking-tighter">Enterprise Overview</h1>
+            <p className="text-brand-textSecondary mt-1 sm:text-[14px] text-[12px] font-medium">Real-time intelligence and performance monitoring.</p>
           </div>
           <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 flex items-center space-x-2 self-start md:self-center">
               <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse ml-2" />
-              <span className="text-[10px] font-black text-gray-500 pr-3 uppercase tracking-widest leading-none">Global Cluster Live</span>
+              <span className="text-[9px] sm:text-[10px] font-black text-gray-500 pr-3 uppercase tracking-widest leading-none">Global Cluster Live</span>
           </div>
         </div>
       </Card>

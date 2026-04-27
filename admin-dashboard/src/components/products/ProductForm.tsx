@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Modal, Select, Switch, InputNumber, Upload, message, Divider, Row, Col, Tag } from 'antd';
+import { Form, Input, Modal, Select, Switch, InputNumber, Upload, message, Divider, Row, Col, Tag, Grid } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
@@ -12,8 +12,13 @@ interface ProductFormProps {
   onSuccess: () => void;
 }
 
+const { useBreakpoint } = Grid;
+
 const ProductForm: React.FC<ProductFormProps> = ({ open, onClose, product, onSuccess }) => {
   const [form] = Form.useForm();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -169,10 +174,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ open, onClose, product, onSuc
       open={open}
       onCancel={onClose}
       onOk={() => form.submit()}
-      width={1000}
+      width={isMobile ? '95%' : 1000}
       confirmLoading={loading}
       centered
-      style={{ top: 20 }}
+      style={{ top: isMobile ? 10 : 20 }}
     >
       <Form 
         form={form} 

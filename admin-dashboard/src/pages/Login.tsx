@@ -49,10 +49,11 @@ const Login: React.FC = () => {
         <Card 
             variant="borderless" 
             style={{ 
-                borderRadius: 40, 
+                borderRadius: 32, 
                 boxShadow: '0 20px 50px rgba(0,0,0,0.05)',
-                padding: '24px'
+                padding: '12px'
             }}
+            styles={{ body: { padding: '24px 16px' } }}
         >
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-10">
