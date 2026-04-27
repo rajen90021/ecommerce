@@ -102,6 +102,30 @@ const seedDatabase = async () => {
                 description: 'Books and literature',
                 image_url: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400',
                 status: 'active'
+            },
+            {
+                category_name: 'Beauty & Personal Care',
+                description: 'Skincare, makeup, and personal grooming',
+                image_url: 'https://images.unsplash.com/photo-1596462502278-27bfdd403348?w=400',
+                status: 'active'
+            },
+            {
+                category_name: 'Sports & Fitness',
+                description: 'Gym equipment, yoga gear, and outdoor sports',
+                image_url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400',
+                status: 'active'
+            },
+            {
+                category_name: 'Toys & Games',
+                description: 'Fun and educational toys for all ages',
+                image_url: 'https://images.unsplash.com/photo-1566576912321-d67d748d60e4?w=400',
+                status: 'active'
+            },
+            {
+                category_name: 'Arts & Crafts',
+                description: 'Materials for creativity and handmade goods',
+                image_url: 'https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?w=400',
+                status: 'active'
             }
         ];
 
@@ -168,6 +192,23 @@ const seedDatabase = async () => {
                 average_rating: 4.3,
                 total_reviews: 89
             },
+            {
+                product_name: '4K Action Camera',
+                category: 'Electronics',
+                description: 'Ultra HD 4K action camera with waterproof case and mounting accessories',
+                price: 129.99,
+                original_price: 199.99,
+                discount_percentage: 35,
+                stock_quantity: 20,
+                brand: 'GoCapture',
+                tags: 'camera, action, video, 4k',
+                is_featured: false,
+                is_trending: false,
+                is_new_arrival: true,
+                image_url: 'https://images.unsplash.com/photo-1505322101000-19457c4320a6?w=500',
+                average_rating: 4.6,
+                total_reviews: 45
+            },
             // Clothing
             {
                 product_name: 'Classic Denim Jacket',
@@ -201,6 +242,21 @@ const seedDatabase = async () => {
                 average_rating: 4.7,
                 total_reviews: 342
             },
+            {
+                product_name: 'Floral Summer Dress',
+                category: 'Clothing',
+                description: 'Lightweight and breezy floral print dress perfect for warm weather',
+                price: 59.99,
+                stock_quantity: 35,
+                brand: 'SunnyDays',
+                tags: 'dress, summer, floral, fashion',
+                is_featured: true,
+                is_trending: true,
+                is_new_arrival: false,
+                image_url: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=500',
+                average_rating: 4.5,
+                total_reviews: 112
+            },
             // Home & Kitchen
             {
                 product_name: 'Stainless Steel Cookware Set',
@@ -232,6 +288,21 @@ const seedDatabase = async () => {
                 average_rating: 4.4,
                 total_reviews: 223
             },
+            {
+                product_name: 'Ceramic Plant Pots Set',
+                category: 'Home & Kitchen',
+                description: 'Set of 3 modern ceramic plant pots with drainage holes',
+                price: 34.99,
+                stock_quantity: 60,
+                brand: 'GreenHome',
+                tags: 'decor, plants, pots, ceramic',
+                is_featured: false,
+                is_trending: false,
+                is_new_arrival: true,
+                image_url: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=500',
+                average_rating: 4.7,
+                total_reviews: 56
+            },
             // Books
             {
                 product_name: 'The Art of Programming',
@@ -262,6 +333,134 @@ const seedDatabase = async () => {
                 image_url: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500',
                 average_rating: 4.6,
                 total_reviews: 412
+            },
+            // Beauty & Personal Care
+            {
+                product_name: 'Organic Aloe Vera Gel',
+                category: 'Beauty & Personal Care',
+                description: '100% pure organic aloe vera gel for skin and hair hydration',
+                price: 14.99,
+                stock_quantity: 100,
+                brand: 'NatureFresh',
+                tags: 'beauty, skincare, organic, natural',
+                is_featured: false,
+                is_trending: true,
+                is_new_arrival: false,
+                image_url: 'https://images.unsplash.com/photo-1596462502278-27bfdd403348?w=500', // Reusing category image pattern or similar
+                average_rating: 4.5,
+                total_reviews: 89
+            },
+            {
+                product_name: 'Luxury Skincare Gift Set',
+                category: 'Beauty & Personal Care',
+                description: 'Complete set of cleanser, toner, and moisturizer',
+                price: 129.99,
+                original_price: 159.99,
+                discount_percentage: 18.75,
+                stock_quantity: 30,
+                brand: 'LuxeBeauty',
+                tags: 'skincare, gift, luxury, beauty',
+                is_featured: true,
+                is_trending: false,
+                is_new_arrival: true,
+                image_url: 'https://images.unsplash.com/photo-1571781535606-50c5b9a74a39?w=500',
+                average_rating: 4.9,
+                total_reviews: 45
+            },
+            // Sports & Fitness
+            {
+                product_name: 'Professional Yoga Mat',
+                category: 'Sports & Fitness',
+                description: 'Eco-friendly non-slip yoga mat with carrying strap',
+                price: 45.00,
+                stock_quantity: 50,
+                brand: 'ZenFit',
+                tags: 'yoga, fitness, exercise, gym',
+                is_featured: true,
+                is_trending: true,
+                is_new_arrival: false,
+                image_url: 'https://images.unsplash.com/photo-1593810450967-f9c42742e326?w=500',
+                average_rating: 4.7,
+                total_reviews: 134
+            },
+            {
+                product_name: 'Adjustable Dumbbell Set',
+                category: 'Sports & Fitness',
+                description: 'Pair of adjustable dumbbells (5-50 lbs) for home workouts',
+                price: 249.99,
+                stock_quantity: 15,
+                brand: 'PowerLift',
+                tags: 'fitness, weights, gym, strength',
+                is_featured: false,
+                is_trending: false,
+                is_new_arrival: true,
+                image_url: 'https://images.unsplash.com/photo-1638536532686-d610adfc8e5c?w=500',
+                average_rating: 4.8,
+                total_reviews: 78
+            },
+            // Toys & Games
+            {
+                product_name: 'Classic Wooden Building Blocks',
+                category: 'Toys & Games',
+                description: '100-piece natural wood building blocks set for kids',
+                price: 39.99,
+                stock_quantity: 40,
+                brand: 'KidsPlay',
+                tags: 'toys, kids, educational, wooden',
+                is_featured: false,
+                is_trending: false,
+                is_new_arrival: true,
+                image_url: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=500',
+                average_rating: 4.5,
+                total_reviews: 23
+            },
+            {
+                product_name: 'Remote Control Race Car',
+                category: 'Toys & Games',
+                description: 'High-speed RC car with rechargeable battery',
+                price: 59.99,
+                original_price: 79.99,
+                discount_percentage: 25,
+                stock_quantity: 30,
+                brand: 'SpeedRacer',
+                tags: 'toys, rc, car, racing',
+                is_featured: true,
+                is_trending: true,
+                is_new_arrival: false,
+                image_url: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=500',
+                average_rating: 4.6,
+                total_reviews: 98
+            },
+            // Arts & Crafts
+            {
+                product_name: 'Artist Canvas Set (Pack of 5)',
+                category: 'Arts & Crafts',
+                description: 'Pre-stretched cotton canvases for oil and acrylic painting',
+                price: 24.99,
+                stock_quantity: 100,
+                brand: 'ArtMate',
+                tags: 'art, canvas, painting, creative',
+                is_featured: false,
+                is_trending: false,
+                is_new_arrival: false,
+                image_url: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=500',
+                average_rating: 4.4,
+                total_reviews: 56
+            },
+            {
+                product_name: 'Handmade Pottery Tool Kit',
+                category: 'Arts & Crafts',
+                description: 'Complete set of clay sculpting tools for beginners',
+                price: 34.99,
+                stock_quantity: 45,
+                brand: 'ClayWorks',
+                tags: 'pottery, art, crafts, handmade',
+                is_featured: true,
+                is_trending: false,
+                is_new_arrival: true,
+                image_url: 'https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?w=500',
+                average_rating: 4.8,
+                total_reviews: 34
             }
         ];
 
