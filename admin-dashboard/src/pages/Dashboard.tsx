@@ -73,29 +73,40 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, growth, icon }) => {
 const Dashboard: React.FC = () => {
   const [data, setData] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const stats = await dashboardService.getStats();
       setData(stats);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+
+    // Auto-refresh every 10 minutes (600,000 ms)
+    const intervalId = setInterval(() => {
+      console.log('Synchronizing Dashboard data...');
+      fetchDashboardData(false); // Background refresh without full screen loader
+    }, 600000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const COLORS = ['#C62828', '#1A1A1A', '#757575', '#BDBDBD', '#E0E0E0'];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[500px]">
+      <div className="flex flex-col items-center justify-center h-[500px] space-y-6">
         <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-brand-primary"></div>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] animate-pulse">Initializing Data Stream...</p>
       </div>
     );
   }
@@ -111,7 +122,11 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
           <div>
             <h1 className="text-2xl sm:text-4xl font-black text-brand-accent tracking-tighter">Enterprise Overview</h1>
-            <p className="text-brand-textSecondary mt-1 sm:text-[14px] text-[12px] font-medium">Real-time intelligence and performance monitoring.</p>
+            <div className="flex items-center space-x-2 mt-1">
+              <p className="text-brand-textSecondary sm:text-[14px] text-[12px] font-medium">Real-time intelligence monitoring.</p>
+              <div className="w-1 h-1 bg-gray-300 rounded-full" />
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Last Sync: {lastUpdated.toLocaleTimeString()}</p>
+            </div>
           </div>
           <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 flex items-center space-x-2 self-start md:self-center">
               <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse ml-2" />
