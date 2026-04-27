@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Button, Modal, Select, Switch, InputNumber, Upload, message, Divider, Row, Col, Card, Space, Tag } from 'antd';
-import { PlusOutlined, DeleteOutlined, UploadOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Form, Input, Modal, Select, Switch, InputNumber, Upload, message, Divider, Row, Col, Tag } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
 import type { Product, Category } from '../../types';
